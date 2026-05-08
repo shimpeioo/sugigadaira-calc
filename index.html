@@ -116,15 +116,7 @@ details[open] summary::after{transform:rotate(180deg)}
     <button class="fac-btn" type="button" data-facility="bungalow2">バンガロー2番<span class="cap">人数制限なし</span></button>
   </div>
 
-  <div class="tent-counters" id="tentControls" style="margin-top:12px;border-top:1px solid #f5f5f4;padding-top:8px">
-    <div class="counter">
-      <div class="label">テント貸出 <span class="sub">880円／張</span></div>
-      <div class="counter-controls">
-        <button class="cbtn" type="button" data-counter="tentRental" data-delta="-1">−</button>
-        <div class="cval"><span id="tentRentalVal">0</span><span class="unit">張</span></div>
-        <button class="cbtn" type="button" data-counter="tentRental" data-delta="1">＋</button>
-      </div>
-    </div>
+  <div id="tentControls" style="margin-top:12px;border-top:1px solid #f5f5f4;padding-top:8px">
     <div class="counter">
       <div class="label">テント持込 <span class="sub">660円／張</span></div>
       <div class="counter-controls">
@@ -133,12 +125,35 @@ details[open] summary::after{transform:rotate(180deg)}
         <button class="cbtn" type="button" data-counter="tentBring" data-delta="1">＋</button>
       </div>
     </div>
+    <div class="counter">
+      <div class="label">テント貸出 <span class="sub">880円／張</span></div>
+      <div class="counter-controls">
+        <button class="cbtn" type="button" data-counter="tentRental" data-delta="-1">−</button>
+        <div class="cval"><span id="tentRentalVal">0</span><span class="unit">張</span></div>
+        <button class="cbtn" type="button" data-counter="tentRental" data-delta="1">＋</button>
+      </div>
+    </div>
   </div>
+</section>
+
+<!-- テント利用人数 -->
+<section class="tent-people-section" id="tentPeopleSection">
+  <h2>テントサイト利用人数</h2>
+  <div class="counter">
+    <div class="label">小学生以上 <span class="sub">220円／人・幼児除く</span></div>
+    <div class="counter-controls">
+      <button class="cbtn" type="button" data-counter="tentPeople" data-delta="-1">−</button>
+      <div class="cval"><span id="tentPeopleVal">0</span><span class="unit">人</span></div>
+      <button class="cbtn" type="button" data-counter="tentPeople" data-delta="1">＋</button>
+    </div>
+  </div>
+  <p style="font-size:11px;color:#a8a29e;margin:6px 0 0">※ コテージ・バンガロー宿泊者は含めない</p>
 </section>
 
 <!-- 人数 -->
 <section>
   <h2>合計人数</h2>
+  <p style="font-size:11px;color:#78716c;margin:-4px 0 8px">グループ全体の人数。テントサイト利用人数を増やすと自動で連動します。</p>
   <div class="counter">
     <div class="label">大人</div>
     <div class="counter-controls">
@@ -165,19 +180,6 @@ details[open] summary::after{transform:rotate(180deg)}
   </div>
 </section>
 
-<!-- テント利用人数 -->
-<section class="tent-people-section" id="tentPeopleSection">
-  <h2>テントサイト利用人数</h2>
-  <div class="counter">
-    <div class="label">小学生以上 <span class="sub">220円／人・幼児除く</span></div>
-    <div class="counter-controls">
-      <button class="cbtn" type="button" data-counter="tentPeople" data-delta="-1">−</button>
-      <div class="cval"><span id="tentPeopleVal">0</span><span class="unit">人</span></div>
-      <button class="cbtn" type="button" data-counter="tentPeople" data-delta="1">＋</button>
-    </div>
-  </div>
-  <p style="font-size:11px;color:#a8a29e;margin:6px 0 0">※ コテージ・バンガロー宿泊者は含めない</p>
-</section>
 
 <!-- 内訳 -->
 <details id="breakdownDetails">
@@ -455,10 +457,32 @@ document.querySelectorAll("[data-counter]").forEach(function (el) {
     var delta = parseInt(el.dataset.delta, 10);
     var min = key === "nights" ? 1 : 0;
     var max = key === "nights" ? 14 : (key === "tentRental" || key === "tentBring") ? 30 : 50;
-    state[key] = Math.max(min, Math.min(max, state[key] + delta));
+    var newVal = Math.max(min, Math.min(max, state[key] + delta));
+    state[key] = newVal;
+
+    // 双方向同期：合計人数（料金対象 = 大人＋小中）と テントサイト利用人数 を整合させる
+    syncTentAndTotal(key);
+
     render();
   });
 });
+
+function syncTentAndTotal(changedKey) {
+  var totalPaying = state.adults + state.children;
+
+  if (changedKey === "tentPeople") {
+    // テント人数を増やしたとき、合計（料金対象）を超えていれば、不足分を大人に追加
+    if (state.tentPeople > totalPaying) {
+      var diff = state.tentPeople - totalPaying;
+      state.adults += diff;
+    }
+  } else if (changedKey === "adults" || changedKey === "children") {
+    // 合計を減らした結果テント人数を下回ったら、テント人数を連動して減らす
+    if (state.tentPeople > totalPaying) {
+      state.tentPeople = totalPaying;
+    }
+  }
+}
 
 document.getElementById("resetBtn").addEventListener("click", function () {
   if (!confirm("入力内容をリセットしますか？")) return;
