@@ -54,10 +54,14 @@ details[open] summary::after{transform:rotate(180deg)}
 .brow{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#44403c}
 .brow .amt{font-weight:600;font-feature-settings:"tnum"}
 .brow.muted{color:#a8a29e}
-.warn{background:#fef3c7;border:1px solid #fbbf24;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#92400e}
-.warn.error{background:#fee2e2;border-color:#ef4444;color:#991b1b}
+/* 警告：緑ヘッダー内に表示する */
+header .warnings{margin-top:10px}
+header .warnings:empty{display:none}
+.warn{background:rgba(255,255,255,.18);border-radius:8px;padding:8px 12px;margin-top:6px;font-size:12px;color:#fff;line-height:1.45;backdrop-filter:blur(4px)}
+.warn:first-child{margin-top:0}
+.warn.error{background:#dc2626;color:#fff;font-weight:500;box-shadow:0 1px 4px rgba(220,38,38,.4)}
 .warn.error::before{content:"⚠ "}
-.warn::before{content:"⚠ "}
+.warn::before{content:"ℹ "}
 .muted-text{font-size:12px;color:#a8a29e;text-align:center;padding:16px 0}
 .reset-btn{background:transparent;border:none;color:#fff;font-size:13px;text-decoration:underline;-webkit-appearance:none;padding:4px 8px;float:right;opacity:.85}
 .tent-people-section{display:none}
@@ -75,11 +79,10 @@ details[open] summary::after{transform:rotate(180deg)}
   <div class="total-label">合計（税込）</div>
   <div class="total" id="total">¥0</div>
   <div class="nights-info" id="nightsInfo"></div>
+  <div class="warnings" id="warnings"></div>
 </header>
 
 <main>
-
-<div id="warnings"></div>
 
 <!-- 滞在タイプ -->
 <section>
