@@ -63,7 +63,20 @@ header .warnings:empty{display:none}
 .warn.error::before{content:"⚠ "}
 .warn::before{content:"ℹ "}
 .muted-text{font-size:12px;color:#a8a29e;text-align:center;padding:16px 0}
-.reset-btn{background:transparent;border:none;color:#fff;font-size:13px;text-decoration:underline;-webkit-appearance:none;padding:4px 8px;float:right;opacity:.85}
+.reset-btn{background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.45);color:#fff;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;-webkit-appearance:none;cursor:pointer;letter-spacing:.04em;flex-shrink:0;font-family:inherit}
+.reset-btn:active{background:rgba(255,255,255,.32);transform:scale(.95)}
+/* 預かり金/お釣り */
+.payment-row{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.22);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.payment-input-wrap{flex:1 1 150px;display:flex;align-items:center;gap:6px;min-width:0}
+.payment-input-wrap > label{font-size:13px;opacity:.95;white-space:nowrap}
+.payment-input{flex:1;min-width:0;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35);color:#fff;font-size:18px;font-weight:700;padding:8px 10px;border-radius:8px;text-align:right;-webkit-appearance:none;appearance:none;font-feature-settings:"tnum";font-family:inherit}
+.payment-input::placeholder{color:rgba(255,255,255,.55);font-weight:400}
+.payment-input:focus{outline:none;background:rgba(255,255,255,.3);border-color:rgba(255,255,255,.7)}
+.change-display{flex:1 1 130px;text-align:right;min-width:0}
+.change-display .label{font-size:11px;opacity:.9;display:block;line-height:1.2}
+.change-display .value{font-size:22px;font-weight:700;font-feature-settings:"tnum";line-height:1.15;display:inline-block}
+.change-display.short .label{color:#fee2e2}
+.change-display.short .value{background:#dc2626;color:#fff;padding:2px 10px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.2)}
 .tent-people-section{display:none}
 .tent-people-section.show{display:block}
 @media (min-width:600px){.facility-grid{grid-template-columns:repeat(3,1fr)}}
@@ -72,13 +85,25 @@ header .warnings:empty{display:none}
 <body>
 
 <header>
-  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
     <div class="title">🌲 杉ヶ平キャンプ場 料金計算機</div>
-    <button class="reset-btn" id="resetBtn" type="button">リセット</button>
+    <button class="reset-btn" id="resetBtn" type="button">🔄 リセット</button>
   </div>
   <div class="total-label">合計（税込）</div>
   <div class="total" id="total">¥0</div>
   <div class="nights-info" id="nightsInfo"></div>
+
+  <div class="payment-row">
+    <div class="payment-input-wrap">
+      <label for="paymentInput">預かり</label>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="paymentInput" class="payment-input" placeholder="0" autocomplete="off" />
+    </div>
+    <div class="change-display" id="changeDisplay">
+      <span class="label" id="changeLabel">お釣り</span>
+      <span class="value" id="changeValue">¥0</span>
+    </div>
+  </div>
+
   <div class="warnings" id="warnings"></div>
 </header>
 
@@ -407,6 +432,10 @@ function render() {
   var v = validate(state);
 
   document.getElementById("total").textContent = "¥" + result.total.toLocaleString();
+
+  // お釣り計算
+  renderChange(result.total);
+
   var info = "";
   if (state.stay === "day") {
     info = "日帰り";
@@ -470,6 +499,50 @@ document.querySelectorAll("[data-counter]").forEach(function (el) {
   });
 });
 
+// 預かり金額からお釣りを計算してヘッダーに表示
+function renderChange(total) {
+  var input = document.getElementById("paymentInput");
+  var paid = parseInt((input.value || "").replace(/[^0-9]/g, ""), 10) || 0;
+  var disp = document.getElementById("changeDisplay");
+  var label = document.getElementById("changeLabel");
+  var value = document.getElementById("changeValue");
+
+  if (paid === 0) {
+    disp.classList.remove("short");
+    label.textContent = "お釣り";
+    value.textContent = "¥0";
+    return;
+  }
+  var diff = paid - total;
+  if (diff >= 0) {
+    disp.classList.remove("short");
+    label.textContent = "お釣り";
+    value.textContent = "¥" + diff.toLocaleString();
+  } else {
+    disp.classList.add("short");
+    label.textContent = "不足";
+    value.textContent = "¥" + Math.abs(diff).toLocaleString();
+  }
+}
+
+// 預かり金額の入力：3桁カンマ区切りで表示しつつ、内部は数字のみに正規化
+(function () {
+  var input = document.getElementById("paymentInput");
+  input.addEventListener("input", function () {
+    var raw = (input.value || "").replace(/[^0-9]/g, "");
+    // 表示にカンマ
+    if (raw === "") {
+      input.value = "";
+    } else {
+      input.value = parseInt(raw, 10).toLocaleString();
+    }
+    // 計算は最新合計に対して
+    var totalText = document.getElementById("total").textContent;
+    var totalNum = parseInt(totalText.replace(/[^0-9]/g, ""), 10) || 0;
+    renderChange(totalNum);
+  });
+})();
+
 function syncTentAndTotal(changedKey) {
   var totalPaying = state.adults + state.children;
 
@@ -500,6 +573,7 @@ document.getElementById("resetBtn").addEventListener("click", function () {
     infants: 0,
     tentPeople: 0
   };
+  document.getElementById("paymentInput").value = "";
   render();
 });
 
