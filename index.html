@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>杉ヶ平 料金計算機</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#047857">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="杉ヶ平料金">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="./icon-512.png">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","ヒラギノ角ゴ ProN",sans-serif;background:#fafaf9;color:#1c1917;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:10;background:#047857;color:#fff;padding:env(safe-area-inset-top) 16px 16px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+header .title{font-size:13px;opacity:.85;letter-spacing:.05em}
+header .total-label{font-size:13px;opacity:.85;margin-top:4px}
+header .total{font-size:42px;font-weight:700;line-height:1.1;margin-top:2px;font-feature-settings:"tnum"}
+header .nights-info{font-size:12px;opacity:.85;margin-top:4px;min-height:1em}
+main{padding:12px 16px 80px;max-width:680px;margin:0 auto}
+section{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+h2{font-size:14px;font-weight:700;color:#44403c;margin:0 0 10px;letter-spacing:.02em}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{flex:1;min-width:120px;padding:14px 12px;border:2px solid #e7e5e4;background:#fff;border-radius:10px;font-size:15px;font-weight:600;color:#44403c;transition:all .1s;-webkit-appearance:none}
+.chip:active{transform:scale(.97)}
+.chip.active{background:#047857;color:#fff;border-color:#047857}
+.facility-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.fac-btn{padding:12px 8px;border:2px solid #e7e5e4;background:#fff;border-radius:10px;font-size:13px;font-weight:600;color:#44403c;text-align:left;line-height:1.3;-webkit-appearance:none;transition:all .1s}
+.fac-btn:active{transform:scale(.97)}
+.fac-btn.active{background:#047857;color:#fff;border-color:#047857}
+.fac-btn .cap{display:block;font-size:11px;font-weight:400;opacity:.7;margin-top:2px}
+.fac-btn.active .cap{opacity:.9}
+.fac-btn.pet::after{content:" 🐾";font-size:11px}
+.counter{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f4}
+.counter:last-child{border-bottom:none}
+.counter .label{font-size:15px;color:#1c1917;flex:1}
+.counter .label .sub{font-size:12px;color:#78716c;font-weight:400;margin-left:4px}
+.counter-controls{display:flex;align-items:center;gap:0}
+.cbtn{width:44px;height:44px;border:2px solid #d6d3d1;background:#fff;border-radius:50%;font-size:22px;font-weight:700;color:#44403c;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;line-height:1}
+.cbtn:active{background:#f5f5f4;transform:scale(.92)}
+.cbtn:disabled{opacity:.35;cursor:not-allowed}
+.cval{min-width:54px;text-align:center;font-size:20px;font-weight:700;color:#1c1917;font-feature-settings:"tnum"}
+.cval .unit{font-size:13px;font-weight:400;color:#78716c;margin-left:2px}
+details{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+details summary{font-size:14px;font-weight:700;color:#44403c;cursor:pointer;outline:none;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"▾";color:#78716c;transition:transform .15s}
+details[open] summary::after{transform:rotate(180deg)}
+.breakdown{margin-top:10px;border-top:1px solid #f5f5f4;padding-top:10px}
+.brow{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#44403c}
+.brow .amt{font-weight:600;font-feature-settings:"tnum"}
+.brow.muted{color:#a8a29e}
+.warn{background:#fef3c7;border:1px solid #fbbf24;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#92400e}
+.warn.error{background:#fee2e2;border-color:#ef4444;color:#991b1b}
+.warn.error::before{content:"⚠ "}
+.warn::before{content:"⚠ "}
+.muted-text{font-size:12px;color:#a8a29e;text-align:center;padding:16px 0}
+.reset-btn{background:transparent;border:none;color:#fff;font-size:13px;text-decoration:underline;-webkit-appearance:none;padding:4px 8px;float:right;opacity:.85}
+.tent-counters{display:none}
+.tent-counters.show{display:block}
+.tent-people-section{display:none}
+.tent-people-section.show{display:block}
+@media (min-width:600px){.facility-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div class="title">🌲 杉ヶ平キャンプ場 料金計算機</div>
+    <button class="reset-btn" id="resetBtn" type="button">リセット</button>
+  </div>
+  <div class="total-label">合計（税込）</div>
+  <div class="total" id="total">¥0</div>
+  <div class="nights-info" id="nightsInfo"></div>
+</header>
+
+<main>
+
+<div id="warnings"></div>
+
+<!-- 滞在タイプ -->
+<section>
+  <h2>滞在タイプ</h2>
+  <div class="chips">
+    <button class="chip active" type="button" data-stay="overnight">宿泊</button>
+    <button class="chip" type="button" data-stay="day">日帰り</button>
+  </div>
+</section>
+
+<!-- 泊数 -->
+<section id="nightsSection">
+  <h2>泊数</h2>
+  <div class="counter">
+    <div class="label">泊数 <span class="sub">2泊目以降は半額</span></div>
+    <div class="counter-controls">
+      <button class="cbtn" type="button" data-counter="nights" data-delta="-1">−</button>
+      <div class="cval"><span id="nightsVal">1</span><span class="unit">泊</span></div>
+      <button class="cbtn" type="button" data-counter="nights" data-delta="1">＋</button>
+    </div>
+  </div>
+</section>
+
+<!-- 利用施設 -->
+<section>
+  <h2>利用施設（複数選択可）</h2>
+  <div class="facility-grid">
+    <button class="fac-btn" type="button" data-facility="cottageA">A棟ニッコウキスゲ<span class="cap">最大8名（基本6）</span></button>
+    <button class="fac-btn" type="button" data-facility="cottageB">B棟コメツツジ<span class="cap">最大6名（基本4）</span></button>
+    <button class="fac-btn" type="button" data-facility="cottageC">C棟シャクナゲ<span class="cap">最大6名（基本4）</span></button>
+    <button class="fac-btn pet" type="button" data-facility="cottageD">D棟チングルマ<span class="cap">最大6名（基本4）ペット可</span></button>
+    <button class="fac-btn" type="button" data-facility="cottageE">E棟イワカガミ<span class="cap">4名のみ（追加不可）</span></button>
+    <button class="fac-btn" type="button" data-facility="bungalow1">バンガロー1番<span class="cap">人数制限なし</span></button>
+    <button class="fac-btn" type="button" data-facility="bungalow2">バンガロー2番<span class="cap">人数制限なし</span></button>
+  </div>
+
+  <div class="tent-counters" id="tentControls" style="margin-top:12px;border-top:1px solid #f5f5f4;padding-top:8px">
+    <div class="counter">
+      <div class="label">テント貸出 <span class="sub">880円／張</span></div>
+      <div class="counter-controls">
+        <button class="cbtn" type="button" data-counter="tentRental" data-delta="-1">−</button>
+        <div class="cval"><span id="tentRentalVal">0</span><span class="unit">張</span></div>
+        <button class="cbtn" type="button" data-counter="tentRental" data-delta="1">＋</button>
+      </div>
+    </div>
+    <div class="counter">
+      <div class="label">テント持込 <span class="sub">660円／張</span></div>
+      <div class="counter-controls">
+        <button class="cbtn" type="button" data-counter="tentBring" data-delta="-1">−</button>
+        <div class="cval"><span id="tentBringVal">0</span><span class="unit">張</span></div>
+        <button class="cbtn" type="button" data-counter="tentBring" data-delta="1">＋</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 人数 -->
+<section>
+  <h2>合計人数</h2>
+  <div class="counter">
+    <div class="label">大人</div>
+    <div class="counter-controls">
+      <button class="cbtn" type="button" data-counter="adults" data-delta="-1">−</button>
+      <div class="cval"><span id="adultsVal">0</span><span class="unit">人</span></div>
+      <button class="cbtn" type="button" data-counter="adults" data-delta="1">＋</button>
+    </div>
+  </div>
+  <div class="counter">
+    <div class="label">小・中学生</div>
+    <div class="counter-controls">
+      <button class="cbtn" type="button" data-counter="children" data-delta="-1">−</button>
+      <div class="cval"><span id="childrenVal">0</span><span class="unit">人</span></div>
+      <button class="cbtn" type="button" data-counter="children" data-delta="1">＋</button>
+    </div>
+  </div>
+  <div class="counter">
+    <div class="label">幼児 <span class="sub">無料</span></div>
+    <div class="counter-controls">
+      <button class="cbtn" type="button" data-counter="infants" data-delta="-1">−</button>
+      <div class="cval"><span id="infantsVal">0</span><span class="unit">人</span></div>
+      <button class="cbtn" type="button" data-counter="infants" data-delta="1">＋</button>
+    </div>
+  </div>
+</section>
+
+<!-- テント利用人数 -->
+<section class="tent-people-section" id="tentPeopleSection">
+  <h2>テントサイト利用人数</h2>
+  <div class="counter">
+    <div class="label">小学生以上 <span class="sub">220円／人・幼児除く</span></div>
+    <div class="counter-controls">
+      <button class="cbtn" type="button" data-counter="tentPeople" data-delta="-1">−</button>
+      <div class="cval"><span id="tentPeopleVal">0</span><span class="unit">人</span></div>
+      <button class="cbtn" type="button" data-counter="tentPeople" data-delta="1">＋</button>
+    </div>
+  </div>
+  <p style="font-size:11px;color:#a8a29e;margin:6px 0 0">※ コテージ・バンガロー宿泊者は含めない</p>
+</section>
+
+<!-- 内訳 -->
+<details id="breakdownDetails">
+  <summary>内訳を見る</summary>
+  <div class="breakdown" id="breakdown"></div>
+</details>
+
+<p class="muted-text">© 21世紀の森 杉ヶ平キャンプ場（NPO 大長谷村づくり協議会）</p>
+
+</main>
+
+<script>
+"use strict";
+
+// 料金マスタ（仕様書 v0.2 §5.5.2）
+var PRICES = {
+  cottageA:   { overnight: 13200, day: 6600 },
+  cottageB:   { overnight:  8800, day: 4400 },
+  cottageC:   { overnight:  8800, day: 4400 },
+  cottageD:   { overnight:  8800, day: 4400 },
+  cottageE:   { overnight:  8800, day: 4400 },
+  bungalow1:  { overnight:  3150, day: 1580 },
+  bungalow2:  { overnight:  3150, day: 1580 },
+  tentRental: { overnight:   880, day:  440 },
+  tentBring:  { overnight:   660, day:  330 },
+  sheet:      { overnight:  1100, day:  550 },
+  perPerson:  { overnight:   220, day:  110 }
+};
+
+// コテージ定員（基本=棟代込み、max=シーツ追加で増やせる上限）
+var COTTAGE_CAPACITY = {
+  cottageA: { base: 6, max: 8 },
+  cottageB: { base: 4, max: 6 },
+  cottageC: { base: 4, max: 6 },
+  cottageD: { base: 4, max: 6 },
+  cottageE: { base: 4, max: 4 }
+};
+
+var FACILITY_LABEL = {
+  cottageA:  "A棟ニッコウキスゲ",
+  cottageB:  "B棟コメツツジ",
+  cottageC:  "C棟シャクナゲ",
+  cottageD:  "D棟チングルマ",
+  cottageE:  "E棟イワカガミ",
+  bungalow1: "バンガロー1番",
+  bungalow2: "バンガロー2番"
+};
+
+// 状態
+var state = {
+  stay: "overnight", // overnight | day
+  nights: 1,
+  facilities: [],
+  tentRental: 0,
+  tentBring: 0,
+  adults: 0,
+  children: 0,
+  infants: 0,
+  tentPeople: 0
+};
+
+// ========================================
+// 計算ロジック
+// ========================================
+function calculate(s) {
+  var isOvernight = s.stay === "overnight";
+  var key = isOvernight ? "overnight" : "day";
+  var nights = isOvernight ? Math.max(1, s.nights) : 1;
+
+  // 連泊倍率：1泊目=1.0, 2泊目以降=0.5
+  var nightsMul = isOvernight ? (1 + (nights - 1) * 0.5) : 1;
+
+  var lines = [];
+  var total = 0;
+
+  function addLine(label, amount) {
+    if (amount > 0) {
+      lines.push({ label: label, amount: amount });
+      total += amount;
+    }
+  }
+
+  var cottages = s.facilities.filter(function (f) { return f.indexOf("cottage") === 0; });
+  var bungalows = s.facilities.filter(function (f) { return f.indexOf("bungalow") === 0; });
+  var hasTent = s.tentRental > 0 || s.tentBring > 0;
+
+  // 棟代
+  cottages.concat(bungalows).forEach(function (f) {
+    var price = Math.round(PRICES[f][key] * nightsMul);
+    addLine(FACILITY_LABEL[f] + "（棟代）", price);
+  });
+
+  // テント代
+  if (s.tentRental > 0) {
+    var amt = Math.round(PRICES.tentRental[key] * s.tentRental * nightsMul);
+    addLine("テント貸出 ×" + s.tentRental + "張", amt);
+  }
+  if (s.tentBring > 0) {
+    var amtB = Math.round(PRICES.tentBring[key] * s.tentBring * nightsMul);
+    addLine("テント持込 ×" + s.tentBring + "張", amtB);
+  }
+
+  // シーツ代の判定
+  // ルール（§5.5.2）：
+  // - コテージのみ：合計人数のうちコテージ基本定員を超える分にシーツ代（最大上限内）
+  // - コテージ＋バンガロー併用：シーツ代0（バンガローが超過分を吸収）
+  // - コテージ＋テント併用：コテージ宿泊者 = 合計人数 - テント利用人数
+  // - 幼児はコテージにいる前提（料金は無料、定員カウントは含めない＝棟代に含まれる）
+  // 仕様書での「合計人数」は大人＋小中（料金対象人数）で扱う
+  var totalPeople = s.adults + s.children;
+  var sheetCount = 0;
+
+  if (cottages.length > 0) {
+    var baseCap = cottages.reduce(function (acc, c) { return acc + COTTAGE_CAPACITY[c].base; }, 0);
+    var maxCap  = cottages.reduce(function (acc, c) { return acc + COTTAGE_CAPACITY[c].max; }, 0);
+
+    var cottageSleepers;
+    if (bungalows.length > 0) {
+      // バンガロー併用：シーツ代0
+      cottageSleepers = 0;
+    } else if (hasTent) {
+      // テント併用：合計人数 - テント利用人数
+      cottageSleepers = Math.max(0, totalPeople - s.tentPeople);
+    } else {
+      cottageSleepers = totalPeople;
+    }
+
+    if (cottageSleepers > baseCap) {
+      var addable = maxCap - baseCap;
+      sheetCount = Math.min(cottageSleepers - baseCap, addable);
+    }
+  }
+
+  if (sheetCount > 0) {
+    var sheetAmt = Math.round(PRICES.sheet[key] * sheetCount * nightsMul);
+    addLine("シーツ代 ×" + sheetCount + "人", sheetAmt);
+  }
+
+  // テントサイト人数料金
+  if (hasTent && s.tentPeople > 0) {
+    var ppAmt = Math.round(PRICES.perPerson[key] * s.tentPeople * nightsMul);
+    addLine("人数料金（テント利用） ×" + s.tentPeople + "人", ppAmt);
+  }
+
+  return { total: total, lines: lines };
+}
+
+// ========================================
+// バリデーション
+// ========================================
+function validate(s) {
+  var warnings = [];
+  var errors = [];
+
+  if (s.facilities.length === 0 && s.tentRental === 0 && s.tentBring === 0) {
+    return { warnings: warnings, errors: errors }; // 何も選んでない時は警告なし
+  }
+
+  var cottages = s.facilities.filter(function (f) { return f.indexOf("cottage") === 0; });
+  var bungalows = s.facilities.filter(function (f) { return f.indexOf("bungalow") === 0; });
+  var hasTent = s.tentRental > 0 || s.tentBring > 0;
+  var totalPeople = s.adults + s.children;
+
+  // E棟は追加不可
+  if (cottages.indexOf("cottageE") !== -1 && cottages.length === 1 && bungalows.length === 0 && !hasTent) {
+    if (totalPeople > 4) {
+      errors.push("E棟イワカガミは4名まで（追加不可）です。別の棟を追加するか、バンガロー／テントを併用してください。");
+    }
+  }
+
+  // コテージ定員チェック（バンガロー併用なら制限なし）
+  if (cottages.length > 0 && bungalows.length === 0) {
+    var maxCap = cottages.reduce(function (acc, c) { return acc + COTTAGE_CAPACITY[c].max; }, 0);
+    var cottageSleepers = hasTent ? Math.max(0, totalPeople - s.tentPeople) : totalPeople;
+    if (cottageSleepers > maxCap) {
+      errors.push("コテージの最大定員（" + maxCap + "名）を超えています。バンガローまたはテントの併用、別の棟を追加してください。");
+    }
+  }
+
+  // テント利用人数のチェック
+  if (hasTent && s.tentPeople > totalPeople) {
+    errors.push("テントサイト利用人数（" + s.tentPeople + "名）が合計人数（" + totalPeople + "名）を超えています。");
+  }
+
+  if (hasTent && s.tentPeople === 0 && totalPeople > 0 && s.facilities.length === 0) {
+    warnings.push("テントを選択していますが、テントサイト利用人数が0です。人数を入力してください。");
+  }
+
+  return { warnings: warnings, errors: errors };
+}
+
+// ========================================
+// レンダリング
+// ========================================
+function render() {
+  // 滞在タイプ
+  document.querySelectorAll("[data-stay]").forEach(function (el) {
+    el.classList.toggle("active", el.dataset.stay === state.stay);
+  });
+
+  // 泊数セクション表示
+  document.getElementById("nightsSection").style.display = state.stay === "overnight" ? "" : "none";
+  document.getElementById("nightsVal").textContent = state.nights;
+
+  // 施設ボタン
+  document.querySelectorAll("[data-facility]").forEach(function (el) {
+    el.classList.toggle("active", state.facilities.indexOf(el.dataset.facility) !== -1);
+  });
+
+  // テント関連の表示/非表示
+  var hasTent = state.tentRental > 0 || state.tentBring > 0;
+  document.getElementById("tentPeopleSection").classList.toggle("show", hasTent);
+
+  // カウンタ値
+  ["nights","tentRental","tentBring","adults","children","infants","tentPeople"].forEach(function (k) {
+    var el = document.getElementById(k + "Val");
+    if (el) el.textContent = state[k];
+  });
+
+  // 計算
+  var result = calculate(state);
+  var v = validate(state);
+
+  document.getElementById("total").textContent = "¥" + result.total.toLocaleString();
+  var info = "";
+  if (state.stay === "day") {
+    info = "日帰り";
+  } else if (state.nights > 1) {
+    info = state.nights + "泊（2泊目以降半額）";
+  } else if (state.nights === 1) {
+    info = "1泊";
+  }
+  document.getElementById("nightsInfo").textContent = info;
+
+  // 内訳
+  var bd = document.getElementById("breakdown");
+  if (result.lines.length === 0) {
+    bd.innerHTML = '<div class="brow muted">施設・人数を選んでください</div>';
+  } else {
+    bd.innerHTML = result.lines.map(function (l) {
+      return '<div class="brow"><span>' + l.label + '</span><span class="amt">¥' + l.amount.toLocaleString() + '</span></div>';
+    }).join("") + '<div class="brow" style="border-top:1px solid #e7e5e4;margin-top:6px;padding-top:8px"><span><strong>合計</strong></span><span class="amt"><strong>¥' + result.total.toLocaleString() + '</strong></span></div>';
+  }
+
+  // 警告
+  var warnHtml = "";
+  v.errors.forEach(function (msg) { warnHtml += '<div class="warn error">' + msg + '</div>'; });
+  v.warnings.forEach(function (msg) { warnHtml += '<div class="warn">' + msg + '</div>'; });
+  document.getElementById("warnings").innerHTML = warnHtml;
+}
+
+// ========================================
+// イベントハンドラ
+// ========================================
+document.querySelectorAll("[data-stay]").forEach(function (el) {
+  el.addEventListener("click", function () {
+    state.stay = el.dataset.stay;
+    render();
+  });
+});
+
+document.querySelectorAll("[data-facility]").forEach(function (el) {
+  el.addEventListener("click", function () {
+    var f = el.dataset.facility;
+    var idx = state.facilities.indexOf(f);
+    if (idx === -1) state.facilities.push(f);
+    else state.facilities.splice(idx, 1);
+    render();
+  });
+});
+
+document.querySelectorAll("[data-counter]").forEach(function (el) {
+  el.addEventListener("click", function () {
+    var key = el.dataset.counter;
+    var delta = parseInt(el.dataset.delta, 10);
+    var min = key === "nights" ? 1 : 0;
+    var max = key === "nights" ? 14 : (key === "tentRental" || key === "tentBring") ? 30 : 50;
+    state[key] = Math.max(min, Math.min(max, state[key] + delta));
+    render();
+  });
+});
+
+document.getElementById("resetBtn").addEventListener("click", function () {
+  if (!confirm("入力内容をリセットしますか？")) return;
+  state = {
+    stay: "overnight",
+    nights: 1,
+    facilities: [],
+    tentRental: 0,
+    tentBring: 0,
+    adults: 0,
+    children: 0,
+    infants: 0,
+    tentPeople: 0
+  };
+  render();
+});
+
+render();
+
+// ========================================
+// PWA: Service Worker 登録
+// ========================================
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("./sw.js").catch(function (e) {
+      console.log("SW registration failed:", e);
+    });
+  });
+}
+</script>
+</body>
+</html>
