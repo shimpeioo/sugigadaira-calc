@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>杉ヶ平 記録一覧</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#047857">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="杉ヶ平記録">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","ヒラギノ角ゴ ProN",sans-serif;background:#fafaf9;color:#1c1917;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+button,input,select{font-family:inherit}
+header{position:sticky;top:0;z-index:10;background:#047857;color:#fff;padding:env(safe-area-inset-top) 16px 16px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+header .title{font-size:13px;opacity:.85;letter-spacing:.05em}
+header .heading{font-size:22px;font-weight:700;margin-top:2px}
+.action-btn{background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.45);color:#fff;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;-webkit-appearance:none;cursor:pointer;letter-spacing:.04em;flex-shrink:0;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.action-btn:active{background:rgba(255,255,255,.32);transform:scale(.95)}
+.action-btn.solid{background:#fff;color:#047857;border-color:#fff}
+.action-btn.solid:active{background:#f0fdf4}
+.action-btn:disabled{opacity:.4;cursor:not-allowed}
+main{padding:12px 16px 80px;max-width:920px;margin:0 auto}
+section{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+h2{font-size:14px;font-weight:700;color:#44403c;margin:0 0 10px;letter-spacing:.02em}
+.filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.filter-row label{font-size:13px;color:#44403c;font-weight:600}
+.filter-row select{padding:8px 10px;border:1.5px solid #d6d3d1;border-radius:8px;font-size:15px;background:#fff;color:#1c1917;-webkit-appearance:none;min-width:140px}
+.summary-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid #f5f5f4}
+.summary-row .item{flex:1 1 130px;min-width:120px}
+.summary-row .item .lbl{font-size:11px;color:#78716c}
+.summary-row .item .val{font-size:18px;font-weight:700;color:#047857;font-feature-settings:"tnum";margin-top:2px}
+.export-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.export-actions button{padding:10px 14px;font-size:14px;font-weight:600;border-radius:8px;border:1.5px solid #047857;background:#fff;color:#047857;cursor:pointer;-webkit-appearance:none}
+.export-actions button.primary{background:#047857;color:#fff}
+.export-actions button:active{transform:scale(.97)}
+.export-actions button:disabled{opacity:.45;cursor:not-allowed}
+.record-list{display:flex;flex-direction:column;gap:8px}
+.record{border:1.5px solid #e7e5e4;border-radius:10px;padding:12px;display:flex;gap:12px;align-items:flex-start;background:#fff}
+.record .main{flex:1;min-width:0}
+.record .date{font-size:12px;color:#78716c;font-weight:600;letter-spacing:.04em}
+.record .name{font-size:16px;font-weight:700;color:#1c1917;margin-top:2px}
+.record .facilities{font-size:13px;color:#44403c;margin-top:4px;line-height:1.4}
+.record .meta{font-size:12px;color:#78716c;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
+.record .meta .pill{background:#f5f5f4;padding:2px 8px;border-radius:10px}
+.record .price{text-align:right;flex-shrink:0}
+.record .price .sub{font-size:11px;color:#78716c}
+.record .price .total{font-size:18px;font-weight:700;color:#047857;font-feature-settings:"tnum";line-height:1.1;margin-top:2px}
+.record .price .discount{font-size:11px;color:#dc2626;margin-top:2px}
+.record .actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-self:center}
+.record .actions button{padding:6px 10px;font-size:12px;border-radius:6px;border:1.5px solid #d6d3d1;background:#fff;color:#44403c;cursor:pointer;-webkit-appearance:none;font-family:inherit}
+.record .actions button.delete{color:#dc2626;border-color:#fecaca}
+.record .actions button:active{transform:scale(.95)}
+.empty{text-align:center;color:#a8a29e;padding:30px 0;font-size:14px}
+.muted-text{font-size:12px;color:#a8a29e;text-align:center;padding:16px 0}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(100px);background:#047857;color:#fff;padding:12px 20px;border-radius:24px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:200;transition:transform .25s ease;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.err{background:#dc2626}
+.danger-link{font-size:12px;color:#a8a29e;text-decoration:underline;cursor:pointer;background:none;border:none;padding:0;font-family:inherit}
+.danger-link:hover{color:#dc2626}
+@media (max-width:520px){
+  .record{flex-wrap:wrap}
+  .record .price{text-align:left;width:100%;border-top:1px solid #f5f5f4;padding-top:8px;margin-top:4px}
+  .record .actions{flex-direction:row}
+}
+
+/* ============ 月計表プレビュー ============ */
+.preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:none;overflow-y:auto}
+.preview-overlay.show{display:block}
+.preview-card{background:#fff;max-width:1100px;margin:20px auto;border-radius:14px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.preview-card h3{margin:0 0 4px;font-size:20px;color:#1c1917}
+.preview-card .sub{font-size:12px;color:#78716c;margin:0 0 14px}
+.preview-summary{display:flex;flex-wrap:wrap;gap:14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:18px}
+.preview-summary .item{flex:1 1 130px;min-width:110px}
+.preview-summary .item .lbl{font-size:11px;color:#16a34a;font-weight:600;letter-spacing:.04em}
+.preview-summary .item .val{font-size:20px;font-weight:700;color:#047857;font-feature-settings:"tnum";margin-top:2px}
+.preview-section-title{font-size:13px;font-weight:700;color:#44403c;letter-spacing:.04em;margin:18px 0 8px;display:flex;align-items:center;gap:6px}
+.preview-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.preview-table{width:100%;border-collapse:collapse;font-size:13px;font-feature-settings:"tnum";min-width:600px}
+.preview-table th,.preview-table td{padding:8px 10px;border:1px solid #e7e5e4;text-align:left;vertical-align:top}
+.preview-table th{background:#f5f5f4;color:#44403c;font-weight:700;font-size:12px;white-space:nowrap}
+.preview-table td.num,.preview-table th.num{text-align:right;font-feature-settings:"tnum"}
+.preview-table td.zero{color:#d6d3d1}
+.preview-table tr.subtotal td{background:#fafaf9;font-weight:700;border-top:2px solid #78716c}
+.preview-table tr.total td{background:#f0fdf4;font-weight:700;color:#047857;border-top:2px solid #047857;font-size:14px}
+.preview-table tr.discount td{background:#fef2f2;color:#dc2626;font-weight:600}
+.preview-empty{text-align:center;color:#a8a29e;padding:24px 0;font-size:14px}
+.preview-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;padding-top:14px;border-top:1px solid #f5f5f4}
+.preview-actions button{padding:10px 16px;font-size:14px;font-weight:600;border-radius:8px;border:1.5px solid #047857;background:#fff;color:#047857;cursor:pointer;-webkit-appearance:none;font-family:inherit}
+.preview-actions button.primary{background:#047857;color:#fff}
+.preview-actions button.close{border-color:#d6d3d1;color:#44403c;margin-left:auto}
+.preview-actions button:active{transform:scale(.97)}
+.preview-actions button:disabled{opacity:.5;cursor:not-allowed}
+
+/* 印刷向け */
+@media print {
+  body > *:not(.preview-overlay) { display: none !important; }
+  .preview-overlay { position: static; background: white; overflow: visible; display: block !important; padding: 0; }
+  .preview-card { box-shadow: none; max-width: none; margin: 0; padding: 8mm; border-radius: 0; }
+  .preview-actions { display: none !important; }
+  .preview-summary { background: white; border: 1.5px solid #888; }
+  .preview-summary .item .lbl { color: #444; }
+  .preview-summary .item .val { color: #000; }
+  .preview-table-wrap { overflow: visible; }
+  .preview-table { font-size: 11px; min-width: 0; page-break-inside: auto; }
+  .preview-table tr { page-break-inside: avoid; }
+  .preview-table th { background: #eee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .preview-table tr.total td, .preview-table tr.subtotal td { background: #eee !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .preview-table tr.discount td { background: white !important; color: #000 !important; }
+  @page { size: A4 portrait; margin: 10mm; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <div>
+      <div class="title">🌲 杉ヶ平キャンプ場</div>
+      <div class="heading">📋 記録一覧</div>
+    </div>
+    <a class="action-btn solid" href="./index.html">＋ 新しく記録する</a>
+  </div>
+</header>
+
+<main>
+
+<!-- 月選択・サマリ -->
+<section>
+  <h2>📅 月を選んで集計</h2>
+  <div class="filter-row">
+    <label for="monthSelect">対象月：</label>
+    <select id="monthSelect"></select>
+  </div>
+
+  <div class="summary-row">
+    <div class="item"><div class="lbl">件数</div><div class="val" id="sumCount">0</div></div>
+    <div class="item"><div class="lbl">小計（減免前）</div><div class="val" id="sumSubtotal">¥0</div></div>
+    <div class="item"><div class="lbl">減免額</div><div class="val" id="sumDiscount">¥0</div></div>
+    <div class="item"><div class="lbl">合計（減免後）</div><div class="val" id="sumGrand">¥0</div></div>
+    <div class="item"><div class="lbl">人数（県内/県外）</div><div class="val" id="sumPeople">0 / 0</div></div>
+  </div>
+
+  <div class="export-actions">
+    <button type="button" id="btnPreview" class="primary">📋 月計表をプレビュー</button>
+    <button type="button" id="btnExcel">📊 Excel を直接ダウンロード</button>
+    <button type="button" id="btnBackup">💾 全データをバックアップ（JSON）</button>
+    <button type="button" id="btnRestore">📥 バックアップから復元</button>
+    <input type="file" id="restoreInput" accept="application/json" style="display:none">
+  </div>
+</section>
+
+<!-- 一覧 -->
+<section>
+  <h2 id="listHeading">記録一覧</h2>
+  <div class="record-list" id="recordList"></div>
+</section>
+
+<p class="muted-text">
+  © 21世紀の森 杉ヶ平キャンプ場（NPO 大長谷村づくり協議会）<br>
+  <button type="button" class="danger-link" id="btnClearAll">⚠ すべての記録を削除（要注意）</button>
+</p>
+
+</main>
+
+<!-- 月計表プレビュー -->
+<div class="preview-overlay" id="previewOverlay" role="dialog" aria-modal="true">
+  <div class="preview-card">
+    <h3 id="previewTitle">月計表プレビュー</h3>
+    <p class="sub">画面確認用です。役場提出時の Excel とは見た目が違いますが、数値は同一です。</p>
+
+    <div class="preview-summary" id="previewSummary"></div>
+
+    <div class="preview-section-title">📋 明細（日付順）</div>
+    <div class="preview-table-wrap">
+      <table class="preview-table" id="previewDetailTable"></table>
+    </div>
+
+    <div class="preview-section-title">📊 種別ごとの集計（雛形④に相当）</div>
+    <div class="preview-table-wrap">
+      <table class="preview-table" id="previewStatusTable"></table>
+    </div>
+
+    <div class="preview-actions">
+      <button type="button" class="primary" id="previewPrint">🖨 印刷</button>
+      <button type="button" id="previewExcel">📊 Excel として出力</button>
+      <button type="button" class="close" id="previewClose">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="./records-shared.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+"use strict";
+
+function ymKeyOf(dateStr) {
+  return (dateStr || "").slice(0, 7); // YYYY-MM
+}
+
+function showToast(msg, isErr) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.toggle("err", !!isErr);
+  t.classList.add("show");
+  setTimeout(function () { t.classList.remove("show"); }, 2000);
+}
+
+function formatJaDate(dateStr) {
+  // YYYY-MM-DD → M/D（曜）
+  var p = dateStr.split("-");
+  if (p.length !== 3) return dateStr;
+  var d = new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10));
+  var w = ["日","月","火","水","木","金","土"][d.getDay()];
+  return parseInt(p[1],10) + "/" + parseInt(p[2],10) + "（" + w + "）";
+}
+
+function totalPeopleOf(r) {
+  var s = r.state || {};
+  return (s.adults || 0) + (s.children || 0) + (s.infants || 0);
+}
+
+function describeRecord(r) {
+  var s = r.state;
+  var parts = [];
+  s.facilities.forEach(function (f) { parts.push(SugiRecords.FACILITY_LABEL[f]); });
+  if (s.tentBring > 0) parts.push("テント持込×" + s.tentBring);
+  if (s.tentRental > 0) parts.push("テント貸出×" + s.tentRental);
+  var stay = s.stay === "day" ? "日帰り" : (s.nights + "泊");
+  var people = (s.adults + s.children) + "人" + (s.infants > 0 ? "（幼児" + s.infants + "）" : "");
+  return { facilities: parts.join(" / ") || "(施設なし)", stay: stay, people: people };
+}
+
+function populateMonthSelect() {
+  var records = SugiRecords.loadRecords();
+  var months = {};
+  records.forEach(function (r) {
+    var k = ymKeyOf(r.useDate);
+    if (k) months[k] = true;
+  });
+
+  // 今月も常に含める
+  var now = new Date();
+  var thisMonth = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+  months[thisMonth] = true;
+
+  var sorted = Object.keys(months).sort().reverse();
+  var sel = document.getElementById("monthSelect");
+  sel.innerHTML = "";
+  sorted.forEach(function (m) {
+    var opt = document.createElement("option");
+    opt.value = m;
+    var ym = m.split("-");
+    opt.textContent = ym[0] + "年" + parseInt(ym[1],10) + "月";
+    sel.appendChild(opt);
+  });
+  // 既定値：今月（あれば）／なければ先頭
+  if (sorted.indexOf(thisMonth) !== -1) sel.value = thisMonth;
+  else if (sorted[0]) sel.value = sorted[0];
+}
+
+function renderForMonth(ym) {
+  var all = SugiRecords.loadRecords();
+  var rows = all.filter(function (r) { return ymKeyOf(r.useDate) === ym; })
+                .sort(function (a, b) { return a.useDate < b.useDate ? -1 : 1; });
+
+  // サマリ
+  var sumSub = 0, sumDisc = 0, sumIn = 0, sumOut = 0;
+  rows.forEach(function (r) {
+    sumSub += (r.subtotal || 0);
+    sumDisc += (r.discount || 0);
+    var p = totalPeopleOf(r);
+    if (r.region === "outside") sumOut += p; else sumIn += p;
+  });
+  document.getElementById("sumCount").textContent = rows.length;
+  document.getElementById("sumSubtotal").textContent = "¥" + sumSub.toLocaleString();
+  document.getElementById("sumDiscount").textContent = "¥" + sumDisc.toLocaleString();
+  document.getElementById("sumGrand").textContent = "¥" + (sumSub - sumDisc).toLocaleString();
+  document.getElementById("sumPeople").textContent = sumIn + " / " + sumOut;
+
+  // 一覧
+  var listEl = document.getElementById("recordList");
+  document.getElementById("listHeading").textContent =
+    "記録一覧（" + ym.replace("-", "年") + "月：" + rows.length + "件）";
+
+  if (rows.length === 0) {
+    listEl.innerHTML = '<div class="empty">この月の記録はまだありません</div>';
+    document.getElementById("btnExcel").disabled = false; // 空でも空テンプレを出せるよう許可
+    return;
+  }
+  document.getElementById("btnExcel").disabled = false;
+
+  listEl.innerHTML = rows.map(function (r) {
+    var d = describeRecord(r);
+    var grand = (r.subtotal || 0) - (r.discount || 0);
+    var discLine = r.discount ? '<div class="discount">−¥' + r.discount.toLocaleString() + " 減免</div>" : "";
+    var memoLine = r.memo ? '<span class="pill">' + escapeHtml(r.memo) + '</span>' : "";
+    return '' +
+      '<div class="record" data-id="' + r.id + '">' +
+        '<div class="main">' +
+          '<div class="date">' + formatJaDate(r.useDate) + '</div>' +
+          '<div class="name">' + escapeHtml(r.nameKana) + " 様</div>" +
+          '<div class="facilities">' + escapeHtml(d.facilities) + '</div>' +
+          '<div class="meta">' +
+            '<span class="pill">' + d.stay + '</span>' +
+            '<span class="pill">' + d.people + '</span>' +
+            '<span class="pill">' + (r.region === "outside" ? "県外" : "県内") + ' ' + totalPeopleOf(r) + '人</span>' +
+            memoLine +
+          '</div>' +
+        '</div>' +
+        '<div class="price">' +
+          '<div class="sub">小計 ¥' + (r.subtotal||0).toLocaleString() + '</div>' +
+          discLine +
+          '<div class="total">¥' + grand.toLocaleString() + '</div>' +
+        '</div>' +
+        '<div class="actions">' +
+          '<button type="button" class="delete" data-action="delete">削除</button>' +
+        '</div>' +
+      '</div>';
+  }).join("");
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, function (c) {
+    return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+  });
+}
+
+function attachListEvents() {
+  document.getElementById("recordList").addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    var card = e.target.closest(".record");
+    if (!card) return;
+    var id = card.dataset.id;
+    if (btn.dataset.action === "delete") {
+      if (!confirm("この記録を削除しますか？\n（元には戻せません）")) return;
+      SugiRecords.deleteRecord(id);
+      renderForMonth(document.getElementById("monthSelect").value);
+      showToast("削除しました");
+    }
+  });
+}
+
+function downloadExcel(ym) {
+  var btn = document.getElementById("btnExcel");
+  var orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "📊 出力中…";
+  var all = SugiRecords.loadRecords();
+  SugiRecords.buildMonthlyWorkbook(ym, all)
+    .then(function (wb) {
+      var fname = "月計表_" + ym + ".xlsx";
+      XLSX.writeFile(wb, fname);
+      showToast("Excel を書き出しました：" + fname);
+    })
+    .catch(function (e) {
+      console.error(e);
+      showToast("書き出しに失敗：" + e.message, true);
+    })
+    .then(function () {
+      btn.disabled = false;
+      btn.textContent = orig;
+    });
+}
+
+/* ============ 月計表プレビュー ============ */
+function openPreview(ym) {
+  var all = SugiRecords.loadRecords();
+  var rows = all.filter(function (r) { return ymKeyOf(r.useDate) === ym; })
+                .sort(function (a, b) { return a.useDate < b.useDate ? -1 : 1; });
+
+  var ymParts = ym.split("-");
+  var title = ymParts[0] + "年" + parseInt(ymParts[1], 10) + "月";
+  document.getElementById("previewTitle").textContent = "📋 月計表プレビュー（" + title + "）";
+
+  // サマリ
+  var sumSub = 0, sumDisc = 0, sumIn = 0, sumOut = 0;
+  rows.forEach(function (r) {
+    sumSub += (r.subtotal || 0);
+    sumDisc += (r.discount || 0);
+    var p = totalPeopleOf(r);
+    if (r.region === "outside") sumOut += p; else sumIn += p;
+  });
+  var sumGrand = sumSub - sumDisc;
+  document.getElementById("previewSummary").innerHTML =
+    '<div class="item"><div class="lbl">件数</div><div class="val">' + rows.length + ' 件</div></div>' +
+    '<div class="item"><div class="lbl">小計（減免前）</div><div class="val">¥' + sumSub.toLocaleString() + '</div></div>' +
+    '<div class="item"><div class="lbl">減免額</div><div class="val">¥' + sumDisc.toLocaleString() + '</div></div>' +
+    '<div class="item"><div class="lbl">合計（減免後）</div><div class="val">¥' + sumGrand.toLocaleString() + '</div></div>' +
+    '<div class="item"><div class="lbl">人数（県内/県外）</div><div class="val">' + sumIn + ' / ' + sumOut + '</div></div>';
+
+  renderPreviewDetail(rows, sumSub, sumDisc, sumGrand, sumIn, sumOut);
+  renderPreviewStatus(rows);
+
+  document.getElementById("previewOverlay").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closePreview() {
+  document.getElementById("previewOverlay").classList.remove("show");
+  document.body.style.overflow = "";
+}
+
+function renderPreviewDetail(rows, sumSub, sumDisc, sumGrand, sumIn, sumOut) {
+  var table = document.getElementById("previewDetailTable");
+  if (rows.length === 0) {
+    table.innerHTML = '<tbody><tr><td><div class="preview-empty">この月の記録はまだありません</div></td></tr></tbody>';
+    return;
+  }
+  var head = '<thead><tr>' +
+    '<th>日付</th><th>名前</th><th>施設・形態</th><th class="num">人数</th>' +
+    '<th class="num">小計</th><th class="num">減免</th><th class="num">合計</th><th>住所</th>' +
+    '</tr></thead>';
+  var body = '<tbody>' + rows.map(function (r) {
+    var d = describeRecord(r);
+    var grand = (r.subtotal || 0) - (r.discount || 0);
+    return '<tr>' +
+      '<td>' + formatJaDate(r.useDate) + '</td>' +
+      '<td>' + escapeHtml(r.nameKana) + ' 様</td>' +
+      '<td>' + escapeHtml(d.facilities) + ' / ' + d.stay + '</td>' +
+      '<td class="num">' + totalPeopleOf(r) + '人</td>' +
+      '<td class="num">¥' + (r.subtotal||0).toLocaleString() + '</td>' +
+      '<td class="num">' + (r.discount ? '−¥' + r.discount.toLocaleString() : '<span class="zero">−</span>') + '</td>' +
+      '<td class="num">¥' + grand.toLocaleString() + '</td>' +
+      '<td>' + (r.region === "outside" ? "県外" : "県内") + '</td>' +
+      '</tr>';
+  }).join("") +
+  '<tr class="total">' +
+    '<td colspan="3">合計</td>' +
+    '<td class="num">' + (sumIn + sumOut) + '人</td>' +
+    '<td class="num">¥' + sumSub.toLocaleString() + '</td>' +
+    '<td class="num">' + (sumDisc ? '−¥' + sumDisc.toLocaleString() : '<span class="zero">−</span>') + '</td>' +
+    '<td class="num">¥' + sumGrand.toLocaleString() + '</td>' +
+    '<td>県内' + sumIn + ' / 県外' + sumOut + '</td>' +
+  '</tr></tbody>';
+  table.innerHTML = head + body;
+}
+
+function renderPreviewStatus(rows) {
+  var table = document.getElementById("previewStatusTable");
+  if (rows.length === 0) {
+    table.innerHTML = '<tbody><tr><td><div class="preview-empty">集計対象がありません</div></td></tr></tbody>';
+    return;
+  }
+  var summary = SugiRecords.aggregateForStatusSheet(rows);
+  // [種別表示, 形態, 集計キー, 単価, 単位]
+  var mapping = [
+    ["6人用コテージ", "宿泊", "cottage6_over", 13200, "棟"],
+    ["6人用コテージ", "日帰り", "cottage6_day",  6600, "棟"],
+    ["4人用コテージ", "宿泊", "cottage4_over", 8800, "棟"],
+    ["4人用コテージ", "日帰り", "cottage4_day",  4400, "棟"],
+    ["コテージ加算料金", "宿泊", "addon_over",  1100, "人"],
+    ["コテージ加算料金", "日帰り", "addon_day",   550, "人"],
+    ["バンガロー", "宿泊", "bungalow_over", 3150, "棟"],
+    ["バンガロー", "日帰り", "bungalow_day",  1580, "棟"],
+    ["テント貸出し", "宿泊", "tentR_over",    880, "張"],
+    ["テント貸出し", "日帰り", "tentR_day",    440, "回"],
+    ["テント持込み", "宿泊", "tentB_over",    660, "張"],
+    ["テント持込み", "日帰り", "tentB_day",    330, "回"],
+    ["利用人数", "宿泊", "ppl_over",          220, "人"],
+    ["利用人数", "日帰り", "ppl_day",          110, "人"]
+  ];
+  var sumI = 0, sumL = 0;
+  var bodyRows = mapping.map(function (m) {
+    var data = summary.agg[m[2]] || { use: 0, extraNights: 0, overage: 0 };
+    var I = data.use * m[3];
+    var L = Math.round(data.extraNights * m[3] * 0.5);
+    var P = I + L;
+    sumI += I; sumL += L;
+    var extraUnit = (m[4] === "棟") ? "泊" : ((m[4] === "張" || m[4] === "回") ? "泊" : "人");
+    var connpaku = data.extraNights > 0 ? data.extraNights + extraUnit + "分" : "";
+    var zeroClass = data.use === 0 && data.extraNights === 0 ? " zero" : "";
+    return '<tr>' +
+      '<td' + zeroClass + '>' + m[0] + '</td>' +
+      '<td' + zeroClass + '>' + m[1] + '</td>' +
+      '<td class="num' + zeroClass + '">' + data.use + ' ' + m[4] + '</td>' +
+      '<td class="num' + zeroClass + '">¥' + I.toLocaleString() + '</td>' +
+      '<td class="num">' + connpaku + '</td>' +
+      '<td class="num">' + (L > 0 ? '¥' + L.toLocaleString() : '<span class="zero">−</span>') + '</td>' +
+      '<td class="num' + (P === 0 ? ' zero' : '') + '">¥' + P.toLocaleString() + '</td>' +
+      '</tr>';
+  }).join("");
+  var subtotal = sumI + sumL;
+  var grand = subtotal - summary.totalDiscount;
+  var footRows =
+    '<tr class="subtotal"><td colspan="3">小計</td>' +
+      '<td class="num">¥' + sumI.toLocaleString() + '</td>' +
+      '<td></td><td class="num">¥' + sumL.toLocaleString() + '</td>' +
+      '<td class="num">¥' + subtotal.toLocaleString() + '</td></tr>';
+  if (summary.totalDiscount > 0) {
+    footRows += '<tr class="discount"><td colspan="6">減免額</td>' +
+      '<td class="num">−¥' + summary.totalDiscount.toLocaleString() + '</td></tr>';
+  }
+  footRows += '<tr class="total"><td colspan="6">合計</td>' +
+    '<td class="num">¥' + grand.toLocaleString() + '</td></tr>';
+
+  var head = '<thead><tr>' +
+    '<th>種別</th><th>形態</th><th class="num">利用数</th>' +
+    '<th class="num">金額</th><th class="num">連泊適用</th>' +
+    '<th class="num">連泊適用額</th><th class="num">小計</th>' +
+    '</tr></thead>';
+  table.innerHTML = head + '<tbody>' + bodyRows + footRows + '</tbody>';
+}
+
+// 初期化
+document.addEventListener("DOMContentLoaded", function () {
+  populateMonthSelect();
+  renderForMonth(document.getElementById("monthSelect").value);
+  attachListEvents();
+
+  document.getElementById("monthSelect").addEventListener("change", function (e) {
+    renderForMonth(e.target.value);
+  });
+
+  document.getElementById("btnExcel").addEventListener("click", function () {
+    var ym = document.getElementById("monthSelect").value;
+    downloadExcel(ym);
+  });
+
+  document.getElementById("btnPreview").addEventListener("click", function () {
+    openPreview(document.getElementById("monthSelect").value);
+  });
+  document.getElementById("previewClose").addEventListener("click", closePreview);
+  document.getElementById("previewOverlay").addEventListener("click", function (e) {
+    if (e.target === e.currentTarget) closePreview();
+  });
+  document.getElementById("previewPrint").addEventListener("click", function () { window.print(); });
+  document.getElementById("previewExcel").addEventListener("click", function () {
+    downloadExcel(document.getElementById("monthSelect").value);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closePreview();
+  });
+
+  document.getElementById("btnBackup").addEventListener("click", function () {
+    SugiRecords.exportAllJson();
+    showToast("バックアップを書き出しました");
+  });
+
+  document.getElementById("btnRestore").addEventListener("click", function () {
+    document.getElementById("restoreInput").click();
+  });
+  document.getElementById("restoreInput").addEventListener("change", function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var mode = confirm("既存データに「追加」する場合 OK、「置き換える」場合 キャンセル を押してください。\n\nOK = 追加（重複はスキップ）\nキャンセル = 全置き換え") ? "merge" : "replace";
+    SugiRecords.importJson(file, mode, function (err, n) {
+      if (err) { showToast("読み込み失敗：" + err.message, true); return; }
+      populateMonthSelect();
+      renderForMonth(document.getElementById("monthSelect").value);
+      showToast(n + " 件を" + (mode === "merge" ? "追加" : "復元") + "しました");
+    });
+    e.target.value = "";
+  });
+
+  document.getElementById("btnClearAll").addEventListener("click", function () {
+    if (!confirm("全ての記録を削除します。本当に良いですか？\n（バックアップを取っていない場合は復元できません）")) return;
+    if (!confirm("もう一度確認します。全削除します。よろしいですか？")) return;
+    SugiRecords.saveRecords([]);
+    populateMonthSelect();
+    renderForMonth(document.getElementById("monthSelect").value);
+    showToast("全データを削除しました");
+  });
+});
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("./sw.js").catch(function (e) {
+      console.log("SW registration failed:", e);
+    });
+  });
+}
+</script>
+</body>
+</html>

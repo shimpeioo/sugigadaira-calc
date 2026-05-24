@@ -1,19 +1,34 @@
 // 杉ヶ平料金計算機 Service Worker
 // バージョン更新時はこの番号を変えると、次回起動時に最新ファイルが取得される
-var CACHE_NAME = "sugigadaira-calc-v1";
+var CACHE_NAME = "sugigadaira-calc-v4";
 
-var ASSETS = [
+// コアアセット（必須・失敗したらSWインストール失敗）
+var CORE_ASSETS = [
   "./",
   "./index.html",
+  "./records.html",
+  "./records-shared.js",
+  "./tsukikei-template.xlsx",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png"
 ];
 
+// 外部アセット（CDN・失敗してもSW自体は成立。fetchハンドラ側で再試行可能）
+var EXTERNAL_ASSETS = [
+  "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"
+];
+
 self.addEventListener("install", function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
-      return cache.addAll(ASSETS);
+      var core = cache.addAll(CORE_ASSETS);
+      var external = Promise.all(EXTERNAL_ASSETS.map(function (url) {
+        return fetch(url, { mode: "cors" })
+          .then(function (res) { if (res && res.ok) return cache.put(url, res); })
+          .catch(function () { /* 取得失敗は許容（次回fetchで取得を試みる） */ });
+      }));
+      return Promise.all([core, external]);
     })
   );
   self.skipWaiting();
