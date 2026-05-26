@@ -45,6 +45,8 @@ h2{font-size:14px;font-weight:700;color:#44403c;margin:0 0 10px;letter-spacing:.
 .record .facilities{font-size:13px;color:#44403c;margin-top:4px;line-height:1.4}
 .record .meta{font-size:12px;color:#78716c;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
 .record .meta .pill{background:#f5f5f4;padding:2px 8px;border-radius:10px}
+.record .meta .pill.detailed{background:#dbeafe;color:#1e40af;font-weight:600}
+.record .actions button.edit{color:#047857;border-color:#047857;font-weight:600}
 .record .price{text-align:right;flex-shrink:0}
 .record .price .sub{font-size:11px;color:#78716c}
 .record .price .total{font-size:18px;font-weight:700;color:#047857;font-feature-settings:"tnum";line-height:1.1;margin-top:2px}
@@ -220,11 +222,47 @@ function formatJaDate(dateStr) {
 }
 
 function totalPeopleOf(r) {
+  // 変則記録は各セグメントの最大人数を代表値とする（グループ全体の最大）
+  if (r.mode === "detailed" && Array.isArray(r.segments)) {
+    var maxP = 0;
+    r.segments.forEach(function (seg) {
+      var p = (seg.adults || 0) + (seg.children || 0) + (seg.infants || 0);
+      if (p > maxP) maxP = p;
+    });
+    return maxP;
+  }
   var s = r.state || {};
   return (s.adults || 0) + (s.children || 0) + (s.infants || 0);
 }
 
 function describeRecord(r) {
+  // 変則モード
+  if (r.mode === "detailed" && Array.isArray(r.segments) && r.segments.length > 0) {
+    var stayKind = (r.state && r.state.stay) === "day" ? "日帰り" : (r.segments.length + "泊");
+    var allFacs = {};
+    var totalTentR = 0, totalTentB = 0;
+    r.segments.forEach(function (seg) {
+      (seg.facilities || []).forEach(function (f) { allFacs[f] = true; });
+      totalTentR += (seg.tentRental || 0);
+      totalTentB += (seg.tentBring || 0);
+    });
+    var parts = [];
+    Object.keys(allFacs).forEach(function (f) { parts.push(SugiRecords.FACILITY_LABEL[f]); });
+    if (totalTentB > 0) parts.push("テント持込");
+    if (totalTentR > 0) parts.push("テント貸出");
+    var maxP = 0, maxInfants = 0;
+    r.segments.forEach(function (seg) {
+      var p = (seg.adults || 0) + (seg.children || 0);
+      if (p > maxP) { maxP = p; maxInfants = seg.infants || 0; }
+    });
+    var people = "最大" + maxP + "人" + (maxInfants > 0 ? "（幼児" + maxInfants + "）" : "");
+    return {
+      facilities: parts.join(" / ") || "(施設なし)",
+      stay: stayKind, people: people,
+      isDetailed: true, segmentCount: r.segments.length
+    };
+  }
+  // 通常モード
   var s = r.state;
   var parts = [];
   s.facilities.forEach(function (f) { parts.push(SugiRecords.FACILITY_LABEL[f]); });
@@ -232,7 +270,7 @@ function describeRecord(r) {
   if (s.tentRental > 0) parts.push("テント貸出×" + s.tentRental);
   var stay = s.stay === "day" ? "日帰り" : (s.nights + "泊");
   var people = (s.adults + s.children) + "人" + (s.infants > 0 ? "（幼児" + s.infants + "）" : "");
-  return { facilities: parts.join(" / ") || "(施設なし)", stay: stay, people: people };
+  return { facilities: parts.join(" / ") || "(施設なし)", stay: stay, people: people, isDetailed: false };
 }
 
 function populateMonthSelect() {
@@ -307,6 +345,7 @@ function renderForMonth(ym) {
           '<div class="facilities">' + escapeHtml(d.facilities) + '</div>' +
           '<div class="meta">' +
             '<span class="pill">' + d.stay + '</span>' +
+            (d.isDetailed ? '<span class="pill detailed">🔀 変則</span>' : '') +
             '<span class="pill">' + d.people + '</span>' +
             '<span class="pill">' + (r.region === "outside" ? "県外" : "県内") + ' ' + totalPeopleOf(r) + '人</span>' +
             memoLine +
@@ -318,6 +357,7 @@ function renderForMonth(ym) {
           '<div class="total">¥' + grand.toLocaleString() + '</div>' +
         '</div>' +
         '<div class="actions">' +
+          '<button type="button" class="edit" data-action="edit">✏️ 編集</button>' +
           '<button type="button" class="delete" data-action="delete">削除</button>' +
         '</div>' +
       '</div>';
@@ -342,6 +382,8 @@ function attachListEvents() {
       SugiRecords.deleteRecord(id);
       renderForMonth(document.getElementById("monthSelect").value);
       showToast("削除しました");
+    } else if (btn.dataset.action === "edit") {
+      location.href = "./index.html?id=" + encodeURIComponent(id);
     }
   });
 }
@@ -422,7 +464,7 @@ function renderPreviewDetail(rows, sumSub, sumDisc, sumGrand, sumIn, sumOut) {
     return '<tr>' +
       '<td>' + formatJaDate(r.useDate) + '</td>' +
       '<td>' + escapeHtml(r.nameKana) + ' 様</td>' +
-      '<td>' + escapeHtml(d.facilities) + ' / ' + d.stay + '</td>' +
+      '<td>' + escapeHtml(d.facilities) + ' / ' + d.stay + (d.isDetailed ? ' <span style="background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:8px;font-size:11px;font-weight:600">🔀 変則 ' + d.segmentCount + '泊</span>' : '') + '</td>' +
       '<td class="num">' + totalPeopleOf(r) + '人</td>' +
       '<td class="num">¥' + (r.subtotal||0).toLocaleString() + '</td>' +
       '<td class="num">' + (r.discount ? '−¥' + r.discount.toLocaleString() : '<span class="zero">−</span>') + '</td>' +

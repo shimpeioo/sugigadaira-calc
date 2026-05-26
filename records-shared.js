@@ -42,31 +42,58 @@ var FACILITY_LABEL = {
   bungalow2: "バンガロー2番"
 };
 
-/* ---------- 計算（index.html と同一ロジック） ---------- */
-function calculate(s) {
-  var isOvernight = s.stay === "overnight";
-  var key = isOvernight ? "overnight" : "day";
-  var nights = isOvernight ? Math.max(1, s.nights) : 1;
-  var nightsMul = isOvernight ? (1 + (nights - 1) * 0.5) : 1;
-
+/* ---------- 計算 ----------
+ * calculateOne(seg, stay, multiplier): 1セット分の料金（変則モードの1セグメント、通常モードの1記録両用）
+ * calculate(s): 通常モードの記録（state単位）の合計
+ * calculateRecord(record): 通常/変則を判定して記録全体の合計
+ */
+function calculateOne(seg, stay, multiplier) {
+  var key = stay === "overnight" ? "overnight" : "day";
   var total = 0;
-
-  var cottages = s.facilities.filter(function (f) { return f.indexOf("cottage") === 0; });
-  var bungalows = s.facilities.filter(function (f) { return f.indexOf("bungalow") === 0; });
-  var hasTent = s.tentRental > 0 || s.tentBring > 0;
+  var cottages = seg.facilities.filter(function (f) { return f.indexOf("cottage") === 0; });
+  var bungalows = seg.facilities.filter(function (f) { return f.indexOf("bungalow") === 0; });
+  var hasTent = seg.tentRental > 0 || seg.tentBring > 0;
 
   cottages.concat(bungalows).forEach(function (f) {
-    total += Math.round(PRICES[f][key] * nightsMul);
+    total += Math.round(PRICES[f][key] * multiplier);
   });
-  if (s.tentRental > 0) total += Math.round(PRICES.tentRental[key] * s.tentRental * nightsMul);
-  if (s.tentBring > 0)  total += Math.round(PRICES.tentBring[key]  * s.tentBring  * nightsMul);
+  if (seg.tentRental > 0) total += Math.round(PRICES.tentRental[key] * seg.tentRental * multiplier);
+  if (seg.tentBring > 0)  total += Math.round(PRICES.tentBring[key]  * seg.tentBring  * multiplier);
 
-  var totalPeople = s.adults + s.children;
-  var sheetCount = computeSheetCount(s);
-  if (sheetCount > 0) total += Math.round(PRICES.sheet[key] * sheetCount * nightsMul);
-  if (hasTent && s.tentPeople > 0) total += Math.round(PRICES.perPerson[key] * s.tentPeople * nightsMul);
+  var sheetCount = computeSheetCount(seg);
+  if (sheetCount > 0) total += Math.round(PRICES.sheet[key] * sheetCount * multiplier);
+  if (hasTent && seg.tentPeople > 0) total += Math.round(PRICES.perPerson[key] * seg.tentPeople * multiplier);
+  return total;
+}
 
-  return { total: total, sheetCount: sheetCount };
+function calculate(s) {
+  var isOvernight = s.stay === "overnight";
+  var nights = isOvernight ? Math.max(1, s.nights) : 1;
+  var nightsMul = isOvernight ? (1 + (nights - 1) * 0.5) : 1;
+  var total = calculateOne(s, s.stay, nightsMul);
+  return { total: total, sheetCount: computeSheetCount(s) };
+}
+
+function calculateRecord(record) {
+  if (record.mode === "detailed" && Array.isArray(record.segments) && record.segments.length > 0) {
+    var stay = (record.state && record.state.stay) || "overnight";
+    var isOvernight = stay === "overnight";
+    var total = 0;
+    record.segments.forEach(function (seg, i) {
+      var mul = isOvernight ? (i === 0 ? 1 : 0.5) : 1;
+      total += calculateOne(seg, stay, mul);
+    });
+    return total;
+  }
+  return calculate(record.state || {}).total;
+}
+
+function addDays(dateStr, days) {
+  if (!dateStr || !days) return dateStr;
+  var d = new Date(dateStr);
+  if (isNaN(d)) return dateStr;
+  d.setDate(d.getDate() + days);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 
 function computeSheetCount(s) {
@@ -117,11 +144,36 @@ function deleteRecord(id) {
   saveRecords(records);
 }
 
+function updateRecord(updated) {
+  var records = loadRecords();
+  var found = false;
+  for (var i = 0; i < records.length; i++) {
+    if (records[i].id === updated.id) {
+      // createdAt は元の値を保持
+      if (!updated.createdAt && records[i].createdAt) updated.createdAt = records[i].createdAt;
+      records[i] = updated;
+      found = true;
+      break;
+    }
+  }
+  if (!found) records.push(updated);
+  saveRecords(records);
+  return updated;
+}
+
+function getRecordById(id) {
+  var records = loadRecords();
+  for (var i = 0; i < records.length; i++) {
+    if (records[i].id === id) return records[i];
+  }
+  return null;
+}
+
 function newId() {
   return String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8);
 }
 
-/* ---------- 月計表用：1記録 → 列マトリクスへの振り分け ----------
+/* ---------- 月計表用：1記録 → 列マトリクス行（配列）への振り分け ----------
  * 雛形 〇月キャンプ場利用集計(報告用).xlsx の列構成（0始まりインデックス）：
  *  0  : A 使用日
  *  1-4 : B-E コテージ6人用（宿泊/連泊/超過/日帰）
@@ -137,8 +189,19 @@ function newId() {
  * 29   : AD 県内人数
  * 30   : AE 県外人数
  * 31   : AF 備考
+ *
+ * 戻り値は配列（通常モード=1要素、変則モード=セグメント数の要素）
  */
 function recordToMatrixRow(record) {
+  if (record.mode === "detailed" && Array.isArray(record.segments) && record.segments.length > 0) {
+    return record.segments.map(function (seg, i) {
+      return segmentToMatrixRow(seg, record, i);
+    });
+  }
+  return [legacyRecordToMatrixRow(record)];
+}
+
+function legacyRecordToMatrixRow(record) {
   var s = record.state;
   var isOvernight = s.stay === "overnight";
   var nights = isOvernight ? Math.max(1, s.nights) : 1;
@@ -147,51 +210,41 @@ function recordToMatrixRow(record) {
   var dayCount = isOvernight ? 0 : 1;
 
   var cells = {};
-  function add(col, v) {
-    if (!v) return;
-    cells[col] = (cells[col] || 0) + v;
-  }
+  function add(col, v) { if (!v) return; cells[col] = (cells[col] || 0) + v; }
 
   s.facilities.forEach(function (f) {
     var base;
-    if (f === "cottageA") base = 1;            // 6人用（B=1）
-    else if (f === "cottageB" || f === "cottageC" || f === "cottageD" || f === "cottageE") base = 5; // 4人用（F=5）
-    else if (f === "bungalow1" || f === "bungalow2") base = 13;   // バンガロー（N=13）
+    if (f === "cottageA") base = 1;
+    else if (f === "cottageB" || f === "cottageC" || f === "cottageD" || f === "cottageE") base = 5;
+    else if (f === "bungalow1" || f === "bungalow2") base = 13;
     else return;
-    add(base + 0, firstNight);   // 宿泊（棟数=1）
-    add(base + 1, extraNights);  // 連泊（2泊目以降の泊数）
-    // 超過時間加算（base+2）は calc に概念がない → 0 のまま
-    add(base + 3, dayCount);     // 日帰
+    add(base + 0, firstNight);
+    add(base + 1, extraNights);
+    add(base + 3, dayCount);
   });
 
-  // コテージ超過人数加算（J=9）
   var sheetCount = computeSheetCount(s);
   if (sheetCount > 0) {
-    add(9,  sheetCount * firstNight);   // 宿泊・人数
-    add(10, sheetCount * extraNights);  // 連泊・人数
-    add(12, sheetCount * dayCount);     // 日帰・人数
+    add(9,  sheetCount * firstNight);
+    add(10, sheetCount * extraNights);
+    add(12, sheetCount * dayCount);
   }
-
-  // 貸しテント（R=17, 3列構成）
   if (s.tentRental > 0) {
     add(17, s.tentRental * firstNight);
     add(18, s.tentRental * extraNights);
     add(19, s.tentRental * dayCount);
   }
-  // 持込テント（U=20, 3列構成）
   if (s.tentBring > 0) {
     add(20, s.tentBring * firstNight);
     add(21, s.tentBring * extraNights);
     add(22, s.tentBring * dayCount);
   }
-  // 使用人数加算（X=23, 3列構成）
   if (s.tentPeople > 0) {
     add(23, s.tentPeople * firstNight);
     add(24, s.tentPeople * extraNights);
     add(25, s.tentPeople * dayCount);
   }
 
-  // 県内/県外の人数振り分け
   var totalPeople = (s.adults || 0) + (s.children || 0) + (s.infants || 0);
   var peopleInside = record.region === "inside" ? totalPeople : 0;
   var peopleOutside = record.region === "outside" ? totalPeople : 0;
@@ -205,6 +258,77 @@ function recordToMatrixRow(record) {
     peopleOutside: peopleOutside,
     nameKana: record.nameKana || "",
     memo: record.memo || ""
+  };
+}
+
+// 変則モードの1セグメントを月計表の1行に
+function segmentToMatrixRow(seg, record, segIndex) {
+  var stay = (record.state && record.state.stay) || "overnight";
+  var isOvernight = stay === "overnight";
+  var isFirst = segIndex === 0;
+  // 変則は基本 overnight 想定。day の場合は各日を「日帰り」として扱う
+  var firstNight = (isOvernight && isFirst) ? 1 : 0;
+  var extraNights = (isOvernight && !isFirst) ? 1 : 0;
+  var dayCount = isOvernight ? 0 : 1;
+
+  var useDate = addDays(record.useDate, segIndex);
+
+  var cells = {};
+  function add(col, v) { if (!v) return; cells[col] = (cells[col] || 0) + v; }
+
+  seg.facilities.forEach(function (f) {
+    var base;
+    if (f === "cottageA") base = 1;
+    else if (f === "cottageB" || f === "cottageC" || f === "cottageD" || f === "cottageE") base = 5;
+    else if (f === "bungalow1" || f === "bungalow2") base = 13;
+    else return;
+    add(base + 0, firstNight);
+    add(base + 1, extraNights);
+    add(base + 3, dayCount);
+  });
+
+  var sheetCount = computeSheetCount(seg);
+  if (sheetCount > 0) {
+    add(9,  sheetCount * firstNight);
+    add(10, sheetCount * extraNights);
+    add(12, sheetCount * dayCount);
+  }
+  if (seg.tentRental > 0) {
+    add(17, seg.tentRental * firstNight);
+    add(18, seg.tentRental * extraNights);
+    add(19, seg.tentRental * dayCount);
+  }
+  if (seg.tentBring > 0) {
+    add(20, seg.tentBring * firstNight);
+    add(21, seg.tentBring * extraNights);
+    add(22, seg.tentBring * dayCount);
+  }
+  if (seg.tentPeople > 0) {
+    add(23, seg.tentPeople * firstNight);
+    add(24, seg.tentPeople * extraNights);
+    add(25, seg.tentPeople * dayCount);
+  }
+
+  var totalPeople = (seg.adults || 0) + (seg.children || 0) + (seg.infants || 0);
+  var peopleInside = record.region === "inside" ? totalPeople : 0;
+  var peopleOutside = record.region === "outside" ? totalPeople : 0;
+
+  var mul = isOvernight ? (isFirst ? 1 : 0.5) : 1;
+  var segSubtotal = calculateOne(seg, stay, mul);
+
+  // 名前列：先頭行はそのまま、2行目以降は「（連泊）」を付ける（紙でグループ識別しやすく）
+  var nameOut = record.nameKana || "";
+  if (!isFirst && nameOut) nameOut += "（連泊）";
+
+  return {
+    useDate: useDate,
+    cells: cells,
+    subtotal: segSubtotal,
+    discount: isFirst ? (record.discount || 0) : 0, // 減免は1行目に集約
+    peopleInside: peopleInside,
+    peopleOutside: peopleOutside,
+    nameKana: nameOut,
+    memo: isFirst ? (record.memo || "") : ""
   };
 }
 
@@ -279,9 +403,16 @@ function fillMonthlyMatrix(ws, reiwa, monthNum, recsInMonth) {
   var title = "令和" + reiwa + "年" + monthNum + "月分 キャンプ場使用料 月計表";
   setCell(ws, 0, 1, title, "s");
 
-  var rowsInMonth = recsInMonth.map(recordToMatrixRow);
+  // 変則記録は複数行に展開される。展開後の行を日付順で並べる
+  var rowsInMonth = [];
+  recsInMonth.forEach(function (rec) {
+    var rs = recordToMatrixRow(rec);
+    rs.forEach(function (row) { rowsInMonth.push(row); });
+  });
+  rowsInMonth.sort(function (a, b) { return a.useDate < b.useDate ? -1 : (a.useDate > b.useDate ? 1 : 0); });
+
   if (rowsInMonth.length > DATA_ROW_CAPACITY) {
-    throw new Error("1ヶ月の記録が雛形の容量(" + DATA_ROW_CAPACITY + "件)を超えています：" + rowsInMonth.length + "件");
+    throw new Error("1ヶ月の記録が雛形の容量(" + DATA_ROW_CAPACITY + "件)を超えています：" + rowsInMonth.length + "件\n（変則記録は泊数ぶんの行を使います）");
   }
 
   // 既存の値をクリア（数式セル(AA, AC)は触らない）
@@ -383,17 +514,8 @@ function aggregateForStatusSheet(records) {
     agg[key][field] += n;
   }
 
-  records.forEach(function (r) {
-    var s = r.state;
-    var isOver = s.stay === "overnight";
-    var nights = isOver ? Math.max(1, s.nights) : 1;
-    var firstNight = isOver ? 1 : 0;
-    var extra = isOver && nights > 1 ? nights - 1 : 0;
-    var day = isOver ? 0 : 1;
-
-    totalDiscount += (r.discount || 0);
-
-    s.facilities.forEach(function (f) {
+  function aggregateOne(seg, firstNight, extra, day) {
+    seg.facilities.forEach(function (f) {
       var keyOver, keyDay;
       if (f === "cottageA") { keyOver = "cottage6_over"; keyDay = "cottage6_day"; }
       else if (f === "cottageB" || f === "cottageC" || f === "cottageD" || f === "cottageE") {
@@ -406,26 +528,49 @@ function aggregateForStatusSheet(records) {
       bump(keyDay, "use", day);
     });
 
-    var sheetCount = computeSheetCount(s);
+    var sheetCount = computeSheetCount(seg);
     if (sheetCount > 0) {
       bump("addon_over", "use", sheetCount * firstNight);
       bump("addon_over", "extraNights", sheetCount * extra);
       bump("addon_day", "use", sheetCount * day);
     }
-    if (s.tentRental > 0) {
-      bump("tentR_over", "use", s.tentRental * firstNight);
-      bump("tentR_over", "extraNights", s.tentRental * extra);
-      bump("tentR_day", "use", s.tentRental * day);
+    if (seg.tentRental > 0) {
+      bump("tentR_over", "use", seg.tentRental * firstNight);
+      bump("tentR_over", "extraNights", seg.tentRental * extra);
+      bump("tentR_day", "use", seg.tentRental * day);
     }
-    if (s.tentBring > 0) {
-      bump("tentB_over", "use", s.tentBring * firstNight);
-      bump("tentB_over", "extraNights", s.tentBring * extra);
-      bump("tentB_day", "use", s.tentBring * day);
+    if (seg.tentBring > 0) {
+      bump("tentB_over", "use", seg.tentBring * firstNight);
+      bump("tentB_over", "extraNights", seg.tentBring * extra);
+      bump("tentB_day", "use", seg.tentBring * day);
     }
-    if (s.tentPeople > 0) {
-      bump("ppl_over", "use", s.tentPeople * firstNight);
-      bump("ppl_over", "extraNights", s.tentPeople * extra);
-      bump("ppl_day", "use", s.tentPeople * day);
+    if (seg.tentPeople > 0) {
+      bump("ppl_over", "use", seg.tentPeople * firstNight);
+      bump("ppl_over", "extraNights", seg.tentPeople * extra);
+      bump("ppl_day", "use", seg.tentPeople * day);
+    }
+  }
+
+  records.forEach(function (r) {
+    totalDiscount += (r.discount || 0);
+
+    if (r.mode === "detailed" && Array.isArray(r.segments)) {
+      var stay = (r.state && r.state.stay) || "overnight";
+      var isOver = stay === "overnight";
+      r.segments.forEach(function (seg, i) {
+        var firstNight = (isOver && i === 0) ? 1 : 0;
+        var extra = (isOver && i > 0) ? 1 : 0;
+        var day = isOver ? 0 : 1;
+        aggregateOne(seg, firstNight, extra, day);
+      });
+    } else {
+      var s = r.state || {};
+      var isOver2 = s.stay === "overnight";
+      var nights = isOver2 ? Math.max(1, s.nights) : 1;
+      var firstNight2 = isOver2 ? 1 : 0;
+      var extra2 = isOver2 && nights > 1 ? nights - 1 : 0;
+      var day2 = isOver2 ? 0 : 1;
+      aggregateOne(s, firstNight2, extra2, day2);
     }
   });
 
@@ -473,11 +618,16 @@ window.SugiRecords = {
   PRICES: PRICES,
   FACILITY_LABEL: FACILITY_LABEL,
   calculate: calculate,
+  calculateOne: calculateOne,
+  calculateRecord: calculateRecord,
   loadRecords: loadRecords,
   saveRecords: saveRecords,
   addRecord: addRecord,
   deleteRecord: deleteRecord,
+  updateRecord: updateRecord,
+  getRecordById: getRecordById,
   newId: newId,
+  addDays: addDays,
   recordToMatrixRow: recordToMatrixRow,
   buildMonthlyWorkbook: buildMonthlyWorkbook,
   aggregateForStatusSheet: aggregateForStatusSheet,

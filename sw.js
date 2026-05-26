@@ -1,6 +1,6 @@
 // 杉ヶ平料金計算機 Service Worker
 // バージョン更新時はこの番号を変えると、次回起動時に最新ファイルが取得される
-var CACHE_NAME = "sugigadaira-calc-v4";
+var CACHE_NAME = "sugigadaira-calc-v7";
 
 // コアアセット（必須・失敗したらSWインストール失敗）
 var CORE_ASSETS = [

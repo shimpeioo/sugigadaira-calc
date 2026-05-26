@@ -21,6 +21,9 @@ header .title{font-size:13px;opacity:.85;letter-spacing:.05em}
 header .total-label{font-size:13px;opacity:.85;margin-top:4px}
 header .total{font-size:42px;font-weight:700;line-height:1.1;margin-top:2px;font-feature-settings:"tnum"}
 header .nights-info{font-size:12px;opacity:.85;margin-top:4px;min-height:1em}
+header .edit-banner{margin-top:8px;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;letter-spacing:.04em;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+header .edit-banner button{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+header .edit-banner button:active{background:rgba(255,255,255,.32);transform:scale(.95)}
 main{padding:12px 16px 80px;max-width:680px;margin:0 auto}
 section{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 h2{font-size:14px;font-weight:700;color:#44403c;margin:0 0 10px;letter-spacing:.02em}
@@ -54,7 +57,6 @@ details[open] summary::after{transform:rotate(180deg)}
 .brow{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;color:#44403c}
 .brow .amt{font-weight:600;font-feature-settings:"tnum"}
 .brow.muted{color:#a8a29e}
-/* 警告：緑ヘッダー内に表示する */
 header .warnings{margin-top:10px}
 header .warnings:empty{display:none}
 .warn{background:rgba(255,255,255,.18);border-radius:8px;padding:8px 12px;margin-top:6px;font-size:12px;color:#fff;line-height:1.45;backdrop-filter:blur(4px)}
@@ -65,7 +67,6 @@ header .warnings:empty{display:none}
 .muted-text{font-size:12px;color:#a8a29e;text-align:center;padding:16px 0}
 .reset-btn{background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.45);color:#fff;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;-webkit-appearance:none;cursor:pointer;letter-spacing:.04em;flex-shrink:0;font-family:inherit}
 .reset-btn:active{background:rgba(255,255,255,.32);transform:scale(.95)}
-/* 預かり金/お釣り */
 .payment-row{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.22);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .payment-input-wrap{flex:1 1 150px;display:flex;align-items:center;gap:6px;min-width:0}
 .payment-input-wrap > label{font-size:13px;opacity:.95;white-space:nowrap}
@@ -81,7 +82,6 @@ header .warnings:empty{display:none}
 .tent-people-section.show{display:block}
 @media (min-width:600px){.facility-grid{grid-template-columns:repeat(3,1fr)}}
 
-/* 記録ボタン */
 .action-btn{background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.45);color:#fff;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;-webkit-appearance:none;cursor:pointer;letter-spacing:.04em;flex-shrink:0;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .action-btn:active{background:rgba(255,255,255,.32);transform:scale(.95)}
 .action-btn:disabled{opacity:.4;cursor:not-allowed}
@@ -89,7 +89,32 @@ header .warnings:empty{display:none}
 .save-btn:active{background:#f0fdf4}
 .save-btn:disabled{background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.45)}
 
-/* モーダル */
+/* セグメントカード（変則モード） */
+.seg-card{border:2px solid #e7e5e4;border-radius:12px;background:#fff;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.seg-card.open{border-color:#047857;box-shadow:0 2px 8px rgba(4,120,87,.12)}
+.seg-head{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:#fafaf9;user-select:none}
+.seg-card.open .seg-head{background:#f0fdf4}
+.seg-head .seg-no{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:#047857;color:#fff;border-radius:50%;font-size:13px;font-weight:700;flex-shrink:0}
+.seg-head .seg-meta{flex:1;min-width:0;font-size:13px;color:#44403c;line-height:1.35}
+.seg-head .seg-meta .seg-date{font-weight:700;color:#1c1917}
+.seg-head .seg-meta .seg-summary{color:#78716c;font-size:12px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg-head .seg-price{font-size:15px;font-weight:700;color:#047857;font-feature-settings:"tnum";flex-shrink:0}
+.seg-head .seg-toggle{font-size:14px;color:#78716c;flex-shrink:0;transition:transform .15s}
+.seg-card.open .seg-toggle{transform:rotate(180deg)}
+.seg-body{padding:0 14px;max-height:0;overflow:hidden;transition:padding .2s ease}
+.seg-card.open .seg-body{padding:8px 14px 14px;max-height:none}
+.seg-body h3{font-size:11px;font-weight:700;color:#047857;letter-spacing:.05em;margin:12px 0 6px;text-transform:uppercase}
+.seg-body h3:first-child{margin-top:4px}
+.seg-actions{display:flex;gap:6px;margin-top:14px;padding-top:10px;border-top:1px solid #f5f5f4;flex-wrap:wrap}
+.seg-actions button{padding:6px 10px;border-radius:6px;border:1.5px solid #d6d3d1;background:#fff;color:#44403c;font-size:12px;font-weight:600;-webkit-appearance:none;cursor:pointer;font-family:inherit}
+.seg-actions button:active{transform:scale(.95)}
+.seg-actions button.delete{color:#dc2626;border-color:#fecaca}
+.seg-actions button.copy{color:#047857;border-color:#bbf7d0}
+.add-seg-btn{width:100%;padding:14px;border-radius:12px;border:2px dashed #d6d3d1;background:#fff;color:#047857;font-size:14px;font-weight:700;-webkit-appearance:none;cursor:pointer;letter-spacing:.04em;margin-bottom:12px;font-family:inherit}
+.add-seg-btn:active{background:#f0fdf4;transform:scale(.98)}
+.add-seg-btn:disabled{opacity:.4;cursor:not-allowed}
+.date-input{padding:9px 12px;border:1.5px solid #d6d3d1;border-radius:8px;font-size:16px;font-family:inherit;font-feature-settings:"tnum";background:#fff;color:#1c1917;-webkit-appearance:none;width:100%;max-width:220px}
+
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow-y:auto}
 .modal-overlay.show{display:flex}
 .modal{background:#fff;border-radius:14px;width:100%;max-width:500px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.3);max-height:calc(100vh - 40px);overflow-y:auto}
@@ -111,7 +136,6 @@ header .warnings:empty{display:none}
 .modal-actions .confirm:disabled{background:#a8a29e}
 .modal-actions button:active{transform:scale(.97)}
 
-/* 保存後トースト */
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(100px);background:#047857;color:#fff;padding:12px 20px;border-radius:24px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.25);z-index:200;transition:transform .25s ease;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
 </style>
@@ -131,6 +155,11 @@ header .warnings:empty{display:none}
   <div class="total" id="total">¥0</div>
   <div class="nights-info" id="nightsInfo"></div>
 
+  <div class="edit-banner" id="editBanner" style="display:none">
+    <span id="editBannerText">編集中</span>
+    <button type="button" id="cancelEditBtn">編集をやめる</button>
+  </div>
+
   <div class="payment-row">
     <div class="payment-input-wrap">
       <label for="paymentInput">預かり</label>
@@ -147,7 +176,19 @@ header .warnings:empty{display:none}
 
 <main>
 
-<!-- 滞在タイプ -->
+<!-- 入力モード -->
+<section>
+  <h2>入力モード</h2>
+  <div class="chips">
+    <button class="chip active" type="button" data-mode="simple">通常</button>
+    <button class="chip" type="button" data-mode="detailed">🔀 変則（泊ごとに変える）</button>
+  </div>
+  <p style="font-size:11px;color:#78716c;margin:6px 0 0;line-height:1.4">
+    変則モードは「1泊目テント→2泊目コテージ」など、泊ごとに施設や人数が変わるケース用です。
+  </p>
+</section>
+
+<!-- 滞在タイプ（共通） -->
 <section>
   <h2>滞在タイプ</h2>
   <div class="chips">
@@ -156,98 +197,117 @@ header .warnings:empty{display:none}
   </div>
 </section>
 
-<!-- 泊数 -->
-<section id="nightsSection">
-  <h2>泊数</h2>
-  <div class="counter">
-    <div class="label">泊数 <span class="sub">2泊目以降は半額</span></div>
-    <div class="counter-controls">
-      <button class="cbtn" type="button" data-counter="nights" data-delta="-1">−</button>
-      <div class="cval"><span id="nightsVal">1</span><span class="unit">泊</span></div>
-      <button class="cbtn" type="button" data-counter="nights" data-delta="1">＋</button>
-    </div>
-  </div>
-</section>
+<!-- ========== 通常モード ========== -->
+<div id="simpleSection">
 
-<!-- 利用施設 -->
-<section>
-  <h2>利用施設（複数選択可）</h2>
-  <div class="facility-grid">
-    <button class="fac-btn" type="button" data-facility="cottageA">A棟ニッコウキスゲ<span class="cap">最大8名（基本6）</span></button>
-    <button class="fac-btn" type="button" data-facility="cottageB">B棟コメツツジ<span class="cap">最大6名（基本4）</span></button>
-    <button class="fac-btn" type="button" data-facility="cottageC">C棟シャクナゲ<span class="cap">最大6名（基本4）</span></button>
-    <button class="fac-btn pet" type="button" data-facility="cottageD">D棟チングルマ<span class="cap">最大6名（基本4）ペット可</span></button>
-    <button class="fac-btn" type="button" data-facility="cottageE">E棟イワカガミ<span class="cap">4名のみ（追加不可）</span></button>
-    <button class="fac-btn" type="button" data-facility="bungalow1">バンガロー1番<span class="cap">人数制限なし</span></button>
-    <button class="fac-btn" type="button" data-facility="bungalow2">バンガロー2番<span class="cap">人数制限なし</span></button>
-  </div>
-
-  <div id="tentControls" style="margin-top:12px;border-top:1px solid #f5f5f4;padding-top:8px">
+  <!-- 泊数 -->
+  <section id="nightsSection">
+    <h2>泊数</h2>
     <div class="counter">
-      <div class="label">テント持込 <span class="sub">660円／張</span></div>
+      <div class="label">泊数 <span class="sub">2泊目以降は半額</span></div>
       <div class="counter-controls">
-        <button class="cbtn" type="button" data-counter="tentBring" data-delta="-1">−</button>
-        <div class="cval"><span id="tentBringVal">0</span><span class="unit">張</span></div>
-        <button class="cbtn" type="button" data-counter="tentBring" data-delta="1">＋</button>
+        <button class="cbtn" type="button" data-counter="nights" data-delta="-1">−</button>
+        <div class="cval"><span id="nightsVal">1</span><span class="unit">泊</span></div>
+        <button class="cbtn" type="button" data-counter="nights" data-delta="1">＋</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 利用施設 -->
+  <section>
+    <h2>利用施設（複数選択可）</h2>
+    <div class="facility-grid">
+      <button class="fac-btn" type="button" data-facility="cottageA">A棟ニッコウキスゲ<span class="cap">最大8名（基本6）</span></button>
+      <button class="fac-btn" type="button" data-facility="cottageB">B棟コメツツジ<span class="cap">最大6名（基本4）</span></button>
+      <button class="fac-btn" type="button" data-facility="cottageC">C棟シャクナゲ<span class="cap">最大6名（基本4）</span></button>
+      <button class="fac-btn pet" type="button" data-facility="cottageD">D棟チングルマ<span class="cap">最大6名（基本4）ペット可</span></button>
+      <button class="fac-btn" type="button" data-facility="cottageE">E棟イワカガミ<span class="cap">4名のみ（追加不可）</span></button>
+      <button class="fac-btn" type="button" data-facility="bungalow1">バンガロー1番<span class="cap">人数制限なし</span></button>
+      <button class="fac-btn" type="button" data-facility="bungalow2">バンガロー2番<span class="cap">人数制限なし</span></button>
+    </div>
+
+    <div id="tentControls" style="margin-top:12px;border-top:1px solid #f5f5f4;padding-top:8px">
+      <div class="counter">
+        <div class="label">テント貸出 <span class="sub">880円／張</span></div>
+        <div class="counter-controls">
+          <button class="cbtn" type="button" data-counter="tentRental" data-delta="-1">−</button>
+          <div class="cval"><span id="tentRentalVal">0</span><span class="unit">張</span></div>
+          <button class="cbtn" type="button" data-counter="tentRental" data-delta="1">＋</button>
+        </div>
+      </div>
+      <div class="counter">
+        <div class="label">テント持込 <span class="sub">660円／張</span></div>
+        <div class="counter-controls">
+          <button class="cbtn" type="button" data-counter="tentBring" data-delta="-1">−</button>
+          <div class="cval"><span id="tentBringVal">0</span><span class="unit">張</span></div>
+          <button class="cbtn" type="button" data-counter="tentBring" data-delta="1">＋</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- テント利用人数 -->
+  <section class="tent-people-section" id="tentPeopleSection">
+    <h2>テントサイト利用人数</h2>
+    <div class="counter">
+      <div class="label">小学生以上 <span class="sub">220円／人・幼児除く</span></div>
+      <div class="counter-controls">
+        <button class="cbtn" type="button" data-counter="tentPeople" data-delta="-1">−</button>
+        <div class="cval"><span id="tentPeopleVal">0</span><span class="unit">人</span></div>
+        <button class="cbtn" type="button" data-counter="tentPeople" data-delta="1">＋</button>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#a8a29e;margin:6px 0 0">※ コテージ・バンガロー宿泊者は含めない</p>
+  </section>
+
+  <!-- 人数 -->
+  <section>
+    <h2>合計人数</h2>
+    <p style="font-size:11px;color:#78716c;margin:-4px 0 8px">グループ全体の人数。テントサイト利用人数を増やすと自動で連動します。</p>
+    <div class="counter">
+      <div class="label">大人</div>
+      <div class="counter-controls">
+        <button class="cbtn" type="button" data-counter="adults" data-delta="-1">−</button>
+        <div class="cval"><span id="adultsVal">0</span><span class="unit">人</span></div>
+        <button class="cbtn" type="button" data-counter="adults" data-delta="1">＋</button>
       </div>
     </div>
     <div class="counter">
-      <div class="label">テント貸出 <span class="sub">880円／張</span></div>
+      <div class="label">小・中学生</div>
       <div class="counter-controls">
-        <button class="cbtn" type="button" data-counter="tentRental" data-delta="-1">−</button>
-        <div class="cval"><span id="tentRentalVal">0</span><span class="unit">張</span></div>
-        <button class="cbtn" type="button" data-counter="tentRental" data-delta="1">＋</button>
+        <button class="cbtn" type="button" data-counter="children" data-delta="-1">−</button>
+        <div class="cval"><span id="childrenVal">0</span><span class="unit">人</span></div>
+        <button class="cbtn" type="button" data-counter="children" data-delta="1">＋</button>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- テント利用人数 -->
-<section class="tent-people-section" id="tentPeopleSection">
-  <h2>テントサイト利用人数</h2>
-  <div class="counter">
-    <div class="label">小学生以上 <span class="sub">220円／人・幼児除く</span></div>
-    <div class="counter-controls">
-      <button class="cbtn" type="button" data-counter="tentPeople" data-delta="-1">−</button>
-      <div class="cval"><span id="tentPeopleVal">0</span><span class="unit">人</span></div>
-      <button class="cbtn" type="button" data-counter="tentPeople" data-delta="1">＋</button>
+    <div class="counter">
+      <div class="label">幼児 <span class="sub">無料</span></div>
+      <div class="counter-controls">
+        <button class="cbtn" type="button" data-counter="infants" data-delta="-1">−</button>
+        <div class="cval"><span id="infantsVal">0</span><span class="unit">人</span></div>
+        <button class="cbtn" type="button" data-counter="infants" data-delta="1">＋</button>
+      </div>
     </div>
-  </div>
-  <p style="font-size:11px;color:#a8a29e;margin:6px 0 0">※ コテージ・バンガロー宿泊者は含めない</p>
-</section>
+  </section>
 
-<!-- 人数 -->
-<section>
-  <h2>合計人数</h2>
-  <p style="font-size:11px;color:#78716c;margin:-4px 0 8px">グループ全体の人数。テントサイト利用人数を増やすと自動で連動します。</p>
-  <div class="counter">
-    <div class="label">大人</div>
-    <div class="counter-controls">
-      <button class="cbtn" type="button" data-counter="adults" data-delta="-1">−</button>
-      <div class="cval"><span id="adultsVal">0</span><span class="unit">人</span></div>
-      <button class="cbtn" type="button" data-counter="adults" data-delta="1">＋</button>
-    </div>
-  </div>
-  <div class="counter">
-    <div class="label">小・中学生</div>
-    <div class="counter-controls">
-      <button class="cbtn" type="button" data-counter="children" data-delta="-1">−</button>
-      <div class="cval"><span id="childrenVal">0</span><span class="unit">人</span></div>
-      <button class="cbtn" type="button" data-counter="children" data-delta="1">＋</button>
-    </div>
-  </div>
-  <div class="counter">
-    <div class="label">幼児 <span class="sub">無料</span></div>
-    <div class="counter-controls">
-      <button class="cbtn" type="button" data-counter="infants" data-delta="-1">−</button>
-      <div class="cval"><span id="infantsVal">0</span><span class="unit">人</span></div>
-      <button class="cbtn" type="button" data-counter="infants" data-delta="1">＋</button>
-    </div>
-  </div>
-</section>
+</div><!-- /simpleSection -->
 
+<!-- ========== 変則モード ========== -->
+<div id="detailedSection" style="display:none">
 
-<!-- 内訳 -->
+  <section>
+    <h2>代表者の使用初日</h2>
+    <input type="date" id="startDate" class="date-input" />
+    <p style="font-size:11px;color:#78716c;margin:6px 0 0">変更すると2泊目以降の日付が連動します</p>
+  </section>
+
+  <div id="segmentsList"></div>
+
+  <button class="add-seg-btn" id="btnAddSeg" type="button">＋ 泊を追加</button>
+
+</div><!-- /detailedSection -->
+
+<!-- 内訳（共通） -->
 <details id="breakdownDetails">
   <summary>内訳を見る</summary>
   <div class="breakdown" id="breakdown"></div>
@@ -256,6 +316,96 @@ header .warnings:empty{display:none}
 <p class="muted-text">© 21世紀の森 杉ヶ平キャンプ場（NPO 大長谷村づくり協議会）</p>
 
 </main>
+
+<!-- セグメントカードのテンプレート -->
+<template id="segCardTpl">
+<div class="seg-card" data-seg-idx="">
+  <div class="seg-head">
+    <div class="seg-no"></div>
+    <div class="seg-meta">
+      <div class="seg-date"></div>
+      <div class="seg-summary"></div>
+    </div>
+    <div class="seg-price">¥0</div>
+    <div class="seg-toggle">▼</div>
+  </div>
+  <div class="seg-body">
+    <h3>📍 利用施設</h3>
+    <div class="facility-grid" data-role="facilities">
+      <button class="fac-btn" type="button" data-facility="cottageA">A棟ニッコウキスゲ<span class="cap">最大8名（基本6）</span></button>
+      <button class="fac-btn" type="button" data-facility="cottageB">B棟コメツツジ<span class="cap">最大6名（基本4）</span></button>
+      <button class="fac-btn" type="button" data-facility="cottageC">C棟シャクナゲ<span class="cap">最大6名（基本4）</span></button>
+      <button class="fac-btn pet" type="button" data-facility="cottageD">D棟チングルマ<span class="cap">最大6名（基本4）ペット可</span></button>
+      <button class="fac-btn" type="button" data-facility="cottageE">E棟イワカガミ<span class="cap">4名のみ（追加不可）</span></button>
+      <button class="fac-btn" type="button" data-facility="bungalow1">バンガロー1番<span class="cap">人数制限なし</span></button>
+      <button class="fac-btn" type="button" data-facility="bungalow2">バンガロー2番<span class="cap">人数制限なし</span></button>
+    </div>
+    <div style="margin-top:8px;border-top:1px solid #f5f5f4;padding-top:6px">
+      <div class="counter">
+        <div class="label">テント貸出 <span class="sub">880円／張</span></div>
+        <div class="counter-controls">
+          <button class="cbtn" type="button" data-counter="tentRental" data-delta="-1">−</button>
+          <div class="cval"><span data-show="tentRental">0</span><span class="unit">張</span></div>
+          <button class="cbtn" type="button" data-counter="tentRental" data-delta="1">＋</button>
+        </div>
+      </div>
+      <div class="counter">
+        <div class="label">テント持込 <span class="sub">660円／張</span></div>
+        <div class="counter-controls">
+          <button class="cbtn" type="button" data-counter="tentBring" data-delta="-1">−</button>
+          <div class="cval"><span data-show="tentBring">0</span><span class="unit">張</span></div>
+          <button class="cbtn" type="button" data-counter="tentBring" data-delta="1">＋</button>
+        </div>
+      </div>
+    </div>
+
+    <div data-role="tent-people-section" style="display:none">
+      <h3>⛺ テントサイト利用人数</h3>
+      <div class="counter">
+        <div class="label">小学生以上 <span class="sub">220円／人・幼児除く</span></div>
+        <div class="counter-controls">
+          <button class="cbtn" type="button" data-counter="tentPeople" data-delta="-1">−</button>
+          <div class="cval"><span data-show="tentPeople">0</span><span class="unit">人</span></div>
+          <button class="cbtn" type="button" data-counter="tentPeople" data-delta="1">＋</button>
+        </div>
+      </div>
+      <p style="font-size:11px;color:#a8a29e;margin:4px 0 0">※ コテージ・バンガロー宿泊者は含めない</p>
+    </div>
+
+    <h3>👥 合計人数</h3>
+    <p style="font-size:11px;color:#78716c;margin:-4px 0 4px">テント利用人数を増やすと自動で連動します</p>
+    <div class="counter">
+      <div class="label">大人</div>
+      <div class="counter-controls">
+        <button class="cbtn" type="button" data-counter="adults" data-delta="-1">−</button>
+        <div class="cval"><span data-show="adults">0</span><span class="unit">人</span></div>
+        <button class="cbtn" type="button" data-counter="adults" data-delta="1">＋</button>
+      </div>
+    </div>
+    <div class="counter">
+      <div class="label">小・中学生</div>
+      <div class="counter-controls">
+        <button class="cbtn" type="button" data-counter="children" data-delta="-1">−</button>
+        <div class="cval"><span data-show="children">0</span><span class="unit">人</span></div>
+        <button class="cbtn" type="button" data-counter="children" data-delta="1">＋</button>
+      </div>
+    </div>
+    <div class="counter">
+      <div class="label">幼児 <span class="sub">無料</span></div>
+      <div class="counter-controls">
+        <button class="cbtn" type="button" data-counter="infants" data-delta="-1">−</button>
+        <div class="cval"><span data-show="infants">0</span><span class="unit">人</span></div>
+        <button class="cbtn" type="button" data-counter="infants" data-delta="1">＋</button>
+      </div>
+    </div>
+
+    <div class="seg-actions">
+      <button type="button" class="copy" data-action="copy-prev">📋 前の泊から複製</button>
+      <button type="button" class="delete" data-action="delete">× この泊を削除</button>
+    </div>
+  </div>
+</div>
+</template>
 
 <!-- 保存モーダル -->
 <div class="modal-overlay" id="saveModal" role="dialog" aria-modal="true" aria-labelledby="saveModalTitle">
@@ -298,7 +448,9 @@ header .warnings:empty{display:none}
 <script>
 "use strict";
 
+// ========================================
 // 料金マスタ（仕様書 v0.2 §5.5.2）
+// ========================================
 var PRICES = {
   cottageA:   { overnight: 13200, day: 6600 },
   cottageB:   { overnight:  8800, day: 4400 },
@@ -313,7 +465,6 @@ var PRICES = {
   perPerson:  { overnight:   220, day:  110 }
 };
 
-// コテージ定員（基本=棟代込み、max=シーツ追加で増やせる上限）
 var COTTAGE_CAPACITY = {
   cottageA: { base: 6, max: 8 },
   cottageB: { base: 4, max: 6 },
@@ -331,177 +482,210 @@ var FACILITY_LABEL = {
   bungalow1: "バンガロー1番",
   bungalow2: "バンガロー2番"
 };
-
-// 状態
-var state = {
-  stay: "overnight", // overnight | day
-  nights: 1,
-  facilities: [],
-  tentRental: 0,
-  tentBring: 0,
-  adults: 0,
-  children: 0,
-  infants: 0,
-  tentPeople: 0
+var FACILITY_SHORT = {
+  cottageA:"A棟", cottageB:"B棟", cottageC:"C棟", cottageD:"D棟", cottageE:"E棟",
+  bungalow1:"バ1", bungalow2:"バ2"
 };
+
+// ========================================
+// 状態
+// ========================================
+function todayStr() {
+  var d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
+function newSegment(open) {
+  return {
+    facilities: [],
+    tentRental: 0,
+    tentBring: 0,
+    adults: 0,
+    children: 0,
+    infants: 0,
+    tentPeople: 0,
+    _open: open !== false
+  };
+}
+
+function defaultState() {
+  return {
+    mode: "simple",
+    stay: "overnight",
+    // simple モード用
+    nights: 1,
+    facilities: [],
+    tentRental: 0,
+    tentBring: 0,
+    adults: 0,
+    children: 0,
+    infants: 0,
+    tentPeople: 0,
+    // detailed モード用
+    startDate: todayStr(),
+    segments: [ newSegment(true) ]
+  };
+}
+
+var state = defaultState();
+var editingRecord = null; // 編集中の記録（id を含むメタ）
 
 // ========================================
 // 計算ロジック
 // ========================================
-function calculate(s) {
-  var isOvernight = s.stay === "overnight";
-  var key = isOvernight ? "overnight" : "day";
-  var nights = isOvernight ? Math.max(1, s.nights) : 1;
+function computeSheetCount(seg) {
+  var cottages = seg.facilities.filter(function (f) { return f.indexOf("cottage") === 0; });
+  if (cottages.length === 0) return 0;
+  var bungalows = seg.facilities.filter(function (f) { return f.indexOf("bungalow") === 0; });
+  var hasTent = seg.tentRental > 0 || seg.tentBring > 0;
+  var totalPeople = seg.adults + seg.children;
+  var baseCap = cottages.reduce(function (a, c) { return a + COTTAGE_CAPACITY[c].base; }, 0);
+  var maxCap  = cottages.reduce(function (a, c) { return a + COTTAGE_CAPACITY[c].max; }, 0);
+  var sleepers;
+  if (bungalows.length > 0) sleepers = 0;
+  else if (hasTent) sleepers = Math.max(0, totalPeople - seg.tentPeople);
+  else sleepers = totalPeople;
+  if (sleepers <= baseCap) return 0;
+  return Math.min(sleepers - baseCap, maxCap - baseCap);
+}
 
-  // 連泊倍率：1泊目=1.0, 2泊目以降=0.5
-  var nightsMul = isOvernight ? (1 + (nights - 1) * 0.5) : 1;
-
+// 1セット分の料金（施設・テント・人数・倍率から）
+function calculateOne(seg, stay, multiplier) {
+  var key = stay === "overnight" ? "overnight" : "day";
   var lines = [];
   var total = 0;
-
   function addLine(label, amount) {
-    if (amount > 0) {
-      lines.push({ label: label, amount: amount });
-      total += amount;
-    }
+    if (amount > 0) { lines.push({ label: label, amount: amount }); total += amount; }
   }
 
-  var cottages = s.facilities.filter(function (f) { return f.indexOf("cottage") === 0; });
-  var bungalows = s.facilities.filter(function (f) { return f.indexOf("bungalow") === 0; });
-  var hasTent = s.tentRental > 0 || s.tentBring > 0;
+  var cottages = seg.facilities.filter(function (f) { return f.indexOf("cottage") === 0; });
+  var bungalows = seg.facilities.filter(function (f) { return f.indexOf("bungalow") === 0; });
+  var hasTent = seg.tentRental > 0 || seg.tentBring > 0;
 
-  // 棟代
   cottages.concat(bungalows).forEach(function (f) {
-    var price = Math.round(PRICES[f][key] * nightsMul);
-    addLine(FACILITY_LABEL[f] + "（棟代）", price);
+    addLine(FACILITY_LABEL[f] + "（棟代）", Math.round(PRICES[f][key] * multiplier));
   });
+  if (seg.tentRental > 0) addLine("テント貸出 ×" + seg.tentRental + "張", Math.round(PRICES.tentRental[key] * seg.tentRental * multiplier));
+  if (seg.tentBring > 0)  addLine("テント持込 ×" + seg.tentBring + "張",  Math.round(PRICES.tentBring[key]  * seg.tentBring  * multiplier));
 
-  // テント代
-  if (s.tentRental > 0) {
-    var amt = Math.round(PRICES.tentRental[key] * s.tentRental * nightsMul);
-    addLine("テント貸出 ×" + s.tentRental + "張", amt);
-  }
-  if (s.tentBring > 0) {
-    var amtB = Math.round(PRICES.tentBring[key] * s.tentBring * nightsMul);
-    addLine("テント持込 ×" + s.tentBring + "張", amtB);
-  }
+  var sheetCount = computeSheetCount(seg);
+  if (sheetCount > 0) addLine("シーツ代 ×" + sheetCount + "人", Math.round(PRICES.sheet[key] * sheetCount * multiplier));
 
-  // シーツ代の判定
-  // ルール（§5.5.2）：
-  // - コテージのみ：合計人数のうちコテージ基本定員を超える分にシーツ代（最大上限内）
-  // - コテージ＋バンガロー併用：シーツ代0（バンガローが超過分を吸収）
-  // - コテージ＋テント併用：コテージ宿泊者 = 合計人数 - テント利用人数
-  // - 幼児はコテージにいる前提（料金は無料、定員カウントは含めない＝棟代に含まれる）
-  // 仕様書での「合計人数」は大人＋小中（料金対象人数）で扱う
-  var totalPeople = s.adults + s.children;
-  var sheetCount = 0;
-
-  if (cottages.length > 0) {
-    var baseCap = cottages.reduce(function (acc, c) { return acc + COTTAGE_CAPACITY[c].base; }, 0);
-    var maxCap  = cottages.reduce(function (acc, c) { return acc + COTTAGE_CAPACITY[c].max; }, 0);
-
-    var cottageSleepers;
-    if (bungalows.length > 0) {
-      // バンガロー併用：シーツ代0
-      cottageSleepers = 0;
-    } else if (hasTent) {
-      // テント併用：合計人数 - テント利用人数
-      cottageSleepers = Math.max(0, totalPeople - s.tentPeople);
-    } else {
-      cottageSleepers = totalPeople;
-    }
-
-    if (cottageSleepers > baseCap) {
-      var addable = maxCap - baseCap;
-      sheetCount = Math.min(cottageSleepers - baseCap, addable);
-    }
-  }
-
-  if (sheetCount > 0) {
-    var sheetAmt = Math.round(PRICES.sheet[key] * sheetCount * nightsMul);
-    addLine("シーツ代 ×" + sheetCount + "人", sheetAmt);
-  }
-
-  // テントサイト人数料金
-  if (hasTent && s.tentPeople > 0) {
-    var ppAmt = Math.round(PRICES.perPerson[key] * s.tentPeople * nightsMul);
-    addLine("人数料金（テント利用） ×" + s.tentPeople + "人", ppAmt);
-  }
+  if (hasTent && seg.tentPeople > 0) addLine("人数料金（テント利用）×" + seg.tentPeople + "人", Math.round(PRICES.perPerson[key] * seg.tentPeople * multiplier));
 
   return { total: total, lines: lines };
+}
+
+function calculate(st) {
+  var isOvernight = st.stay === "overnight";
+  if (st.mode === "simple") {
+    var nights = isOvernight ? Math.max(1, st.nights) : 1;
+    var mul = isOvernight ? (1 + (nights - 1) * 0.5) : 1;
+    return calculateOne(st, st.stay, mul);
+  } else {
+    var lines = [];
+    var total = 0;
+    st.segments.forEach(function (seg, i) {
+      var mul = isOvernight ? (i === 0 ? 1 : 0.5) : 1;
+      var r = calculateOne(seg, st.stay, mul);
+      seg._calc = { total: r.total, lines: r.lines, mul: mul };
+      r.lines.forEach(function (l) {
+        lines.push({ label: (i + 1) + "泊目 " + l.label, amount: l.amount });
+      });
+      total += r.total;
+    });
+    return { total: total, lines: lines };
+  }
 }
 
 // ========================================
 // バリデーション
 // ========================================
-function validate(s) {
-  var warnings = [];
-  var errors = [];
-
-  if (s.facilities.length === 0 && s.tentRental === 0 && s.tentBring === 0) {
-    return { warnings: warnings, errors: errors }; // 何も選んでない時は警告なし
+function validateSeg(seg, label) {
+  var errs = [];
+  var warns = [];
+  if (seg.facilities.length === 0 && seg.tentRental === 0 && seg.tentBring === 0) {
+    return { errors: errs, warnings: warns };
   }
+  var cottages = seg.facilities.filter(function (f) { return f.indexOf("cottage") === 0; });
+  var bungalows = seg.facilities.filter(function (f) { return f.indexOf("bungalow") === 0; });
+  var hasTent = seg.tentRental > 0 || seg.tentBring > 0;
+  var totalPeople = seg.adults + seg.children;
+  var prefix = label ? label + "：" : "";
 
-  var cottages = s.facilities.filter(function (f) { return f.indexOf("cottage") === 0; });
-  var bungalows = s.facilities.filter(function (f) { return f.indexOf("bungalow") === 0; });
-  var hasTent = s.tentRental > 0 || s.tentBring > 0;
-  var totalPeople = s.adults + s.children;
-
-  // E棟は追加不可
   if (cottages.indexOf("cottageE") !== -1 && cottages.length === 1 && bungalows.length === 0 && !hasTent) {
-    if (totalPeople > 4) {
-      errors.push("E棟イワカガミは4名まで（追加不可）です。別の棟を追加するか、バンガロー／テントを併用してください。");
-    }
+    if (totalPeople > 4) errs.push(prefix + "E棟は4名まで（追加不可）。別の棟・バンガロー・テントを併用してください。");
   }
-
-  // コテージ定員チェック（バンガロー併用なら制限なし）
   if (cottages.length > 0 && bungalows.length === 0) {
-    var maxCap = cottages.reduce(function (acc, c) { return acc + COTTAGE_CAPACITY[c].max; }, 0);
-    var cottageSleepers = hasTent ? Math.max(0, totalPeople - s.tentPeople) : totalPeople;
-    if (cottageSleepers > maxCap) {
-      errors.push("コテージの最大定員（" + maxCap + "名）を超えています。バンガローまたはテントの併用、別の棟を追加してください。");
-    }
+    var maxCap = cottages.reduce(function (a, c) { return a + COTTAGE_CAPACITY[c].max; }, 0);
+    var sleepers = hasTent ? Math.max(0, totalPeople - seg.tentPeople) : totalPeople;
+    if (sleepers > maxCap) errs.push(prefix + "コテージの最大定員（" + maxCap + "名）超過。");
   }
-
-  // テント利用人数のチェック
-  if (hasTent && s.tentPeople > totalPeople) {
-    errors.push("テントサイト利用人数（" + s.tentPeople + "名）が合計人数（" + totalPeople + "名）を超えています。");
+  if (hasTent && seg.tentPeople > totalPeople) errs.push(prefix + "テント利用人数が合計人数を超えています。");
+  if (hasTent && seg.tentPeople === 0 && totalPeople > 0 && seg.facilities.length === 0) {
+    warns.push(prefix + "テントを選択していますがテントサイト利用人数が0です。");
   }
+  return { errors: errs, warnings: warns };
+}
 
-  if (hasTent && s.tentPeople === 0 && totalPeople > 0 && s.facilities.length === 0) {
-    warnings.push("テントを選択していますが、テントサイト利用人数が0です。人数を入力してください。");
+function validate(st) {
+  var errors = [];
+  var warnings = [];
+  if (st.mode === "simple") {
+    var r = validateSeg(st, "");
+    return { errors: r.errors, warnings: r.warnings };
+  } else {
+    st.segments.forEach(function (seg, i) {
+      var r = validateSeg(seg, (i + 1) + "泊目");
+      errors = errors.concat(r.errors);
+      warnings = warnings.concat(r.warnings);
+    });
+    if (!st.startDate) errors.push("使用初日を入力してください。");
+    return { errors: errors, warnings: warnings };
   }
-
-  return { warnings: warnings, errors: errors };
 }
 
 // ========================================
 // レンダリング
 // ========================================
+function dateAtIndex(i) {
+  if (!state.startDate) return null;
+  var d = new Date(state.startDate);
+  if (isNaN(d)) return null;
+  d.setDate(d.getDate() + i);
+  return d;
+}
+function fmtJaDate(d) {
+  if (!d || isNaN(d)) return "";
+  var w = ["日","月","火","水","木","金","土"][d.getDay()];
+  return (d.getMonth() + 1) + "/" + d.getDate() + "（" + w + "）";
+}
+
 function render() {
-  // 滞在タイプ
+  // モードチップ
+  document.querySelectorAll("[data-mode]").forEach(function (el) {
+    el.classList.toggle("active", el.dataset.mode === state.mode);
+  });
+  document.getElementById("simpleSection").style.display = state.mode === "simple" ? "" : "none";
+  document.getElementById("detailedSection").style.display = state.mode === "detailed" ? "" : "none";
+
+  // 滞在タイプチップ
   document.querySelectorAll("[data-stay]").forEach(function (el) {
     el.classList.toggle("active", el.dataset.stay === state.stay);
   });
 
-  // 泊数セクション表示
-  document.getElementById("nightsSection").style.display = state.stay === "overnight" ? "" : "none";
-  document.getElementById("nightsVal").textContent = state.nights;
+  if (state.mode === "simple") renderSimple();
+  else renderDetailed();
 
-  // 施設ボタン
-  document.querySelectorAll("[data-facility]").forEach(function (el) {
-    el.classList.toggle("active", state.facilities.indexOf(el.dataset.facility) !== -1);
-  });
-
-  // テント関連の表示/非表示
-  var hasTent = state.tentRental > 0 || state.tentBring > 0;
-  document.getElementById("tentPeopleSection").classList.toggle("show", hasTent);
-
-  // カウンタ値
-  ["nights","tentRental","tentBring","adults","children","infants","tentPeople"].forEach(function (k) {
-    var el = document.getElementById(k + "Val");
-    if (el) el.textContent = state[k];
-  });
+  // 編集モードバナー
+  var banner = document.getElementById("editBanner");
+  if (editingRecord) {
+    document.getElementById("editBannerText").textContent =
+      "✏️ 編集中：" + editingRecord.nameKana + " 様 / " + editingRecord.useDate;
+    banner.style.display = "";
+  } else {
+    banner.style.display = "none";
+  }
 
   // 計算
   var result = calculate(state);
@@ -509,22 +693,20 @@ function render() {
 
   document.getElementById("total").textContent = "¥" + result.total.toLocaleString();
 
-  // 「記録する」ボタンの有効/無効（エラーがなく、料金>0 で有効）
   var saveBtnEl = document.getElementById("saveBtn");
-  if (saveBtnEl) {
-    saveBtnEl.disabled = !(result.total > 0 && v.errors.length === 0);
-  }
+  if (saveBtnEl) saveBtnEl.disabled = !(result.total > 0 && v.errors.length === 0);
 
-  // お釣り計算
   renderChange(result.total);
 
+  // 泊数情報
   var info = "";
-  if (state.stay === "day") {
-    info = "日帰り";
-  } else if (state.nights > 1) {
-    info = state.nights + "泊（2泊目以降半額）";
-  } else if (state.nights === 1) {
-    info = "1泊";
+  if (state.mode === "simple") {
+    if (state.stay === "day") info = "日帰り";
+    else if (state.nights > 1) info = state.nights + "泊（2泊目以降半額）";
+    else info = "1泊";
+  } else {
+    if (state.stay === "day") info = "日帰り";
+    else info = state.segments.length + "泊（変則モード）";
   }
   document.getElementById("nightsInfo").textContent = info;
 
@@ -545,9 +727,144 @@ function render() {
   document.getElementById("warnings").innerHTML = warnHtml;
 }
 
+function renderSimple() {
+  // 泊数セクション表示
+  document.getElementById("nightsSection").style.display = state.stay === "overnight" ? "" : "none";
+  document.getElementById("nightsVal").textContent = state.nights;
+
+  // 施設ボタン
+  document.querySelectorAll("#simpleSection [data-facility]").forEach(function (el) {
+    el.classList.toggle("active", state.facilities.indexOf(el.dataset.facility) !== -1);
+  });
+
+  // テント関連
+  var hasTent = state.tentRental > 0 || state.tentBring > 0;
+  document.getElementById("tentPeopleSection").classList.toggle("show", hasTent);
+
+  // カウンタ値
+  ["nights","tentRental","tentBring","adults","children","infants","tentPeople"].forEach(function (k) {
+    var el = document.getElementById(k + "Val");
+    if (el) el.textContent = state[k];
+  });
+}
+
+function renderDetailed() {
+  document.getElementById("startDate").value = state.startDate || "";
+
+  var listEl = document.getElementById("segmentsList");
+  listEl.innerHTML = "";
+  var tpl = document.getElementById("segCardTpl");
+
+  state.segments.forEach(function (seg, idx) {
+    var node = tpl.content.firstElementChild.cloneNode(true);
+    node.dataset.segIdx = String(idx);
+    if (seg._open) node.classList.add("open");
+
+    node.querySelector(".seg-no").textContent = idx + 1;
+    var dateText = (idx + 1) + "泊目  " + fmtJaDate(dateAtIndex(idx));
+    node.querySelector(".seg-date").textContent = dateText;
+
+    var sumParts = [];
+    seg.facilities.forEach(function (f) { sumParts.push(FACILITY_SHORT[f]); });
+    if (seg.tentRental > 0) sumParts.push("貸テ×" + seg.tentRental);
+    if (seg.tentBring > 0) sumParts.push("持テ×" + seg.tentBring);
+    var p = seg.adults + seg.children + seg.infants;
+    if (p > 0) sumParts.push(p + "人");
+    var mulNote = idx === 0 ? "" : "（連泊半額）";
+    node.querySelector(".seg-summary").textContent = (sumParts.join("・") || "（未入力）") + " " + mulNote;
+
+    var segTotal = seg._calc ? seg._calc.total : 0;
+    node.querySelector(".seg-price").textContent = "¥" + segTotal.toLocaleString();
+
+    // 施設ボタン
+    node.querySelectorAll("[data-facility]").forEach(function (b) {
+      b.classList.toggle("active", seg.facilities.indexOf(b.dataset.facility) !== -1);
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var f = b.dataset.facility;
+        var i = seg.facilities.indexOf(f);
+        if (i === -1) seg.facilities.push(f);
+        else seg.facilities.splice(i, 1);
+        render();
+      });
+    });
+
+    // カウンタ
+    node.querySelectorAll("[data-counter]").forEach(function (cb) {
+      cb.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var key = cb.dataset.counter;
+        var delta = parseInt(cb.dataset.delta, 10);
+        var min = 0;
+        var max = (key === "tentRental" || key === "tentBring") ? 30 : 50;
+        seg[key] = Math.max(min, Math.min(max, (seg[key] || 0) + delta));
+
+        // テント／合計人数の整合
+        var totalPaying = seg.adults + seg.children;
+        if (key === "tentPeople" && seg.tentPeople > totalPaying) {
+          seg.adults += (seg.tentPeople - totalPaying);
+        }
+        if ((key === "adults" || key === "children") && seg.tentPeople > seg.adults + seg.children) {
+          seg.tentPeople = seg.adults + seg.children;
+        }
+        render();
+      });
+    });
+    node.querySelectorAll("[data-show]").forEach(function (s) {
+      s.textContent = seg[s.dataset.show] || 0;
+    });
+
+    // テント利用人数セクション表示
+    var hasTent = seg.tentRental > 0 || seg.tentBring > 0;
+    var tpSec = node.querySelector('[data-role="tent-people-section"]');
+    if (tpSec) tpSec.style.display = hasTent ? "" : "none";
+
+    // ヘッダクリックで開閉
+    var head = node.querySelector(".seg-head");
+    head.addEventListener("click", function () {
+      seg._open = !seg._open;
+      render();
+    });
+
+    // アクションボタン
+    node.querySelectorAll("[data-action]").forEach(function (ab) {
+      ab.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var act = ab.dataset.action;
+        if (act === "copy-prev") {
+          if (idx === 0) { alert("前の泊がありません。"); return; }
+          var prev = state.segments[idx - 1];
+          seg.facilities = prev.facilities.slice();
+          seg.tentRental = prev.tentRental;
+          seg.tentBring = prev.tentBring;
+          seg.adults = prev.adults;
+          seg.children = prev.children;
+          seg.infants = prev.infants;
+          seg.tentPeople = prev.tentPeople;
+          render();
+        } else if (act === "delete") {
+          if (state.segments.length === 1) { alert("最低1泊は必要です。"); return; }
+          if (!confirm("この泊を削除しますか？")) return;
+          state.segments.splice(idx, 1);
+          render();
+        }
+      });
+    });
+
+    listEl.appendChild(node);
+  });
+}
+
 // ========================================
-// イベントハンドラ
+// イベント
 // ========================================
+document.querySelectorAll("[data-mode]").forEach(function (el) {
+  el.addEventListener("click", function () {
+    state.mode = el.dataset.mode;
+    render();
+  });
+});
+
 document.querySelectorAll("[data-stay]").forEach(function (el) {
   el.addEventListener("click", function () {
     state.stay = el.dataset.stay;
@@ -555,7 +872,8 @@ document.querySelectorAll("[data-stay]").forEach(function (el) {
   });
 });
 
-document.querySelectorAll("[data-facility]").forEach(function (el) {
+// 通常モードの施設・カウンタ（simpleSection 内のみ）
+document.querySelectorAll("#simpleSection [data-facility]").forEach(function (el) {
   el.addEventListener("click", function () {
     var f = el.dataset.facility;
     var idx = state.facilities.indexOf(f);
@@ -565,30 +883,65 @@ document.querySelectorAll("[data-facility]").forEach(function (el) {
   });
 });
 
-document.querySelectorAll("[data-counter]").forEach(function (el) {
+document.querySelectorAll("#simpleSection [data-counter]").forEach(function (el) {
   el.addEventListener("click", function () {
     var key = el.dataset.counter;
     var delta = parseInt(el.dataset.delta, 10);
     var min = key === "nights" ? 1 : 0;
     var max = key === "nights" ? 14 : (key === "tentRental" || key === "tentBring") ? 30 : 50;
-    var newVal = Math.max(min, Math.min(max, state[key] + delta));
-    state[key] = newVal;
-
-    // 双方向同期：合計人数（料金対象 = 大人＋小中）と テントサイト利用人数 を整合させる
+    state[key] = Math.max(min, Math.min(max, state[key] + delta));
     syncTentAndTotal(key);
-
     render();
   });
 });
 
-// 預かり金額からお釣りを計算してヘッダーに表示
+function syncTentAndTotal(changedKey) {
+  var totalPaying = state.adults + state.children;
+  if (changedKey === "tentPeople" && state.tentPeople > totalPaying) {
+    state.adults += (state.tentPeople - totalPaying);
+  }
+  if ((changedKey === "adults" || changedKey === "children") && state.tentPeople > state.adults + state.children) {
+    state.tentPeople = state.adults + state.children;
+  }
+}
+
+document.getElementById("startDate").addEventListener("change", function (e) {
+  state.startDate = e.target.value;
+  render();
+});
+
+document.getElementById("btnAddSeg").addEventListener("click", function () {
+  // 既存をすべて閉じて、新セグメントを open で追加
+  state.segments.forEach(function (s) { s.open = false; s._open = false; });
+  state.segments.push(newSegment(true));
+  render();
+});
+
+document.getElementById("resetBtn").addEventListener("click", function () {
+  if (!confirm("入力内容をリセットしますか？")) return;
+  state = defaultState();
+  editingRecord = null;
+  history.replaceState(null, "", location.pathname);
+  document.getElementById("paymentInput").value = "";
+  render();
+});
+
+document.getElementById("cancelEditBtn").addEventListener("click", function () {
+  if (!confirm("編集をやめて、新規入力に戻りますか？")) return;
+  state = defaultState();
+  editingRecord = null;
+  history.replaceState(null, "", location.pathname);
+  document.getElementById("paymentInput").value = "";
+  render();
+});
+
+// 預かり金額からお釣り
 function renderChange(total) {
   var input = document.getElementById("paymentInput");
   var paid = parseInt((input.value || "").replace(/[^0-9]/g, ""), 10) || 0;
   var disp = document.getElementById("changeDisplay");
   var label = document.getElementById("changeLabel");
   var value = document.getElementById("changeValue");
-
   if (paid === 0) {
     disp.classList.remove("short");
     label.textContent = "お釣り";
@@ -606,63 +959,68 @@ function renderChange(total) {
     value.textContent = "¥" + Math.abs(diff).toLocaleString();
   }
 }
-
-// 預かり金額の入力：3桁カンマ区切りで表示しつつ、内部は数字のみに正規化
 (function () {
   var input = document.getElementById("paymentInput");
   input.addEventListener("input", function () {
     var raw = (input.value || "").replace(/[^0-9]/g, "");
-    // 表示にカンマ
-    if (raw === "") {
-      input.value = "";
-    } else {
-      input.value = parseInt(raw, 10).toLocaleString();
-    }
-    // 計算は最新合計に対して
-    var totalText = document.getElementById("total").textContent;
-    var totalNum = parseInt(totalText.replace(/[^0-9]/g, ""), 10) || 0;
+    if (raw === "") input.value = "";
+    else input.value = parseInt(raw, 10).toLocaleString();
+    var totalNum = parseInt(document.getElementById("total").textContent.replace(/[^0-9]/g, ""), 10) || 0;
     renderChange(totalNum);
   });
 })();
 
-function syncTentAndTotal(changedKey) {
-  var totalPaying = state.adults + state.children;
-
-  if (changedKey === "tentPeople") {
-    // テント人数を増やしたとき、合計（料金対象）を超えていれば、不足分を大人に追加
-    if (state.tentPeople > totalPaying) {
-      var diff = state.tentPeople - totalPaying;
-      state.adults += diff;
-    }
-  } else if (changedKey === "adults" || changedKey === "children") {
-    // 合計を減らした結果テント人数を下回ったら、テント人数を連動して減らす
-    if (state.tentPeople > totalPaying) {
-      state.tentPeople = totalPaying;
-    }
+// ========================================
+// 編集モード（URL ?id=xxx で既存記録を読込）
+// ========================================
+function loadStateFromRecord(rec) {
+  var s = defaultState();
+  if (rec.mode === "detailed" && Array.isArray(rec.segments) && rec.segments.length > 0) {
+    s.mode = "detailed";
+    s.stay = (rec.state && rec.state.stay) || "overnight";
+    s.startDate = rec.useDate || todayStr();
+    s.segments = rec.segments.map(function (seg, i) {
+      return {
+        facilities: (seg.facilities || []).slice(),
+        tentRental: seg.tentRental || 0,
+        tentBring: seg.tentBring || 0,
+        adults: seg.adults || 0,
+        children: seg.children || 0,
+        infants: seg.infants || 0,
+        tentPeople: seg.tentPeople || 0,
+        _open: i === 0
+      };
+    });
+  } else {
+    s.mode = "simple";
+    var rs = rec.state || {};
+    s.stay = rs.stay || "overnight";
+    s.nights = rs.nights || 1;
+    s.facilities = (rs.facilities || []).slice();
+    s.tentRental = rs.tentRental || 0;
+    s.tentBring = rs.tentBring || 0;
+    s.adults = rs.adults || 0;
+    s.children = rs.children || 0;
+    s.infants = rs.infants || 0;
+    s.tentPeople = rs.tentPeople || 0;
   }
+  return s;
 }
 
-document.getElementById("resetBtn").addEventListener("click", function () {
-  if (!confirm("入力内容をリセットしますか？")) return;
-  state = {
-    stay: "overnight",
-    nights: 1,
-    facilities: [],
-    tentRental: 0,
-    tentBring: 0,
-    adults: 0,
-    children: 0,
-    infants: 0,
-    tentPeople: 0
-  };
-  document.getElementById("paymentInput").value = "";
-  render();
-});
+(function loadFromUrl() {
+  var params = new URLSearchParams(location.search);
+  var id = params.get("id");
+  if (!id) return;
+  var rec = SugiRecords.getRecordById(id);
+  if (!rec) { alert("指定された記録が見つかりません。新規入力に切り替えます。"); return; }
+  state = loadStateFromRecord(rec);
+  editingRecord = rec;
+})();
 
 render();
 
 // ========================================
-// 記録モーダル
+// 保存モーダル
 // ========================================
 (function () {
   var overlay = document.getElementById("saveModal");
@@ -681,38 +1039,48 @@ render();
   regionChips.forEach(function (el) {
     el.addEventListener("click", function () {
       modalRegion = el.dataset.region;
-      regionChips.forEach(function (c) {
-        c.classList.toggle("active", c === el);
-      });
+      regionChips.forEach(function (c) { c.classList.toggle("active", c === el); });
     });
   });
 
-  function todayStr() {
-    var d = new Date();
-    var m = String(d.getMonth() + 1).padStart(2, "0");
-    var dd = String(d.getDate()).padStart(2, "0");
-    return d.getFullYear() + "-" + m + "-" + dd;
-  }
-
   function describeFacilities() {
-    var parts = [];
-    state.facilities.forEach(function (f) {
-      parts.push(FACILITY_LABEL[f]);
-    });
-    if (state.tentBring > 0) parts.push("テント持込 ×" + state.tentBring);
-    if (state.tentRental > 0) parts.push("テント貸出 ×" + state.tentRental);
-    return parts.join(" / ") || "(施設未選択)";
+    if (state.mode === "simple") {
+      var parts = [];
+      state.facilities.forEach(function (f) { parts.push(FACILITY_LABEL[f]); });
+      if (state.tentBring > 0) parts.push("テント持込 ×" + state.tentBring);
+      if (state.tentRental > 0) parts.push("テント貸出 ×" + state.tentRental);
+      return parts.join(" / ") || "(施設未選択)";
+    } else {
+      return "変則 " + state.segments.length + "泊：" + state.segments.map(function (seg, i) {
+        var p = [];
+        seg.facilities.forEach(function (f) { p.push(FACILITY_SHORT[f]); });
+        if (seg.tentRental > 0) p.push("貸テ×" + seg.tentRental);
+        if (seg.tentBring > 0) p.push("持テ×" + seg.tentBring);
+        return (i + 1) + "泊目=" + (p.join("・") || "?");
+      }).join(" / ");
+    }
   }
 
   function describeStay() {
     if (state.stay === "day") return "日帰り";
-    return state.nights + "泊";
+    if (state.mode === "simple") return state.nights + "泊";
+    return state.segments.length + "泊（変則）";
   }
 
   function describePeople() {
-    var p = state.adults + state.children;
-    var tail = state.infants > 0 ? "（幼児 " + state.infants + "）" : "";
-    return p + "人" + tail;
+    if (state.mode === "simple") {
+      var p = state.adults + state.children;
+      var tail = state.infants > 0 ? "（幼児 " + state.infants + "）" : "";
+      return p + "人" + tail;
+    } else {
+      // 変則：最大泊の人数を代表値として表示
+      var maxP = 0, maxInfants = 0;
+      state.segments.forEach(function (seg) {
+        var p = seg.adults + seg.children;
+        if (p > maxP) { maxP = p; maxInfants = seg.infants; }
+      });
+      return "最大 " + maxP + "人" + (maxInfants > 0 ? "（幼児 " + maxInfants + "）" : "");
+    }
   }
 
   function openModal() {
@@ -722,22 +1090,28 @@ render();
       "<div>" + describeFacilities() + "</div>" +
       "<div>" + describeStay() + " / " + describePeople() + "</div>" +
       '<div style="margin-top:4px">合計：<strong>¥' + result.total.toLocaleString() + "</strong></div>";
-    dateEl.value = dateEl.value || todayStr();
-    nameEl.value = "";
-    modalRegion = "inside";
-    regionChips.forEach(function (c) {
-      c.classList.toggle("active", c.dataset.region === "inside");
-    });
-    discountEl.value = "0";
-    memoEl.value = "";
+
+    if (editingRecord) {
+      // 編集モード：既存値で埋める
+      dateEl.value = editingRecord.useDate || (state.mode === "detailed" ? state.startDate : todayStr());
+      nameEl.value = editingRecord.nameKana || "";
+      modalRegion = editingRecord.region || "inside";
+      discountEl.value = String(editingRecord.discount || 0);
+      memoEl.value = editingRecord.memo || "";
+    } else {
+      dateEl.value = state.mode === "detailed" ? state.startDate : (dateEl.value || todayStr());
+      nameEl.value = "";
+      modalRegion = "inside";
+      discountEl.value = "0";
+      memoEl.value = "";
+    }
+    regionChips.forEach(function (c) { c.classList.toggle("active", c.dataset.region === modalRegion); });
     errEl.textContent = "";
     overlay.classList.add("show");
     setTimeout(function () { nameEl.focus(); }, 50);
   }
 
-  function closeModal() {
-    overlay.classList.remove("show");
-  }
+  function closeModal() { overlay.classList.remove("show"); }
 
   function showToast(msg) {
     var t = document.getElementById("toast");
@@ -751,41 +1125,74 @@ render();
     var date = dateEl.value;
     if (!date) { errEl.textContent = "使用日を入力してください"; return; }
     if (!name) { errEl.textContent = "お名前（カタカナ苗字）を入力してください"; return; }
-
     var discount = parseInt(discountEl.value, 10) || 0;
-    if (discount < 0) {
-      errEl.textContent = "減免額にマイナスは入力できません";
-      return;
-    }
+    if (discount < 0) { errEl.textContent = "減免額にマイナスは入力できません"; return; }
 
     var result = calculate(state);
-    var record = {
-      id: SugiRecords.newId(),
-      useDate: date,
-      nameKana: name,
-      state: JSON.parse(JSON.stringify(state)),
-      region: modalRegion,
-      discount: discount,
-      memo: (memoEl.value || "").trim(),
-      subtotal: result.total,
-      createdAt: new Date().toISOString()
-    };
-    SugiRecords.addRecord(record);
+    var record;
+
+    if (state.mode === "simple") {
+      record = {
+        id: editingRecord ? editingRecord.id : SugiRecords.newId(),
+        useDate: date,
+        nameKana: name,
+        state: {
+          stay: state.stay,
+          nights: state.nights,
+          facilities: state.facilities.slice(),
+          tentRental: state.tentRental,
+          tentBring: state.tentBring,
+          adults: state.adults,
+          children: state.children,
+          infants: state.infants,
+          tentPeople: state.tentPeople
+        },
+        region: modalRegion,
+        discount: discount,
+        memo: (memoEl.value || "").trim(),
+        subtotal: result.total,
+        createdAt: editingRecord ? editingRecord.createdAt : new Date().toISOString()
+      };
+    } else {
+      // 変則
+      record = {
+        id: editingRecord ? editingRecord.id : SugiRecords.newId(),
+        useDate: date,
+        nameKana: name,
+        mode: "detailed",
+        state: { stay: state.stay },
+        segments: state.segments.map(function (seg) {
+          return {
+            facilities: seg.facilities.slice(),
+            tentRental: seg.tentRental,
+            tentBring: seg.tentBring,
+            adults: seg.adults,
+            children: seg.children,
+            infants: seg.infants,
+            tentPeople: seg.tentPeople
+          };
+        }),
+        region: modalRegion,
+        discount: discount,
+        memo: (memoEl.value || "").trim(),
+        subtotal: result.total,
+        createdAt: editingRecord ? editingRecord.createdAt : new Date().toISOString()
+      };
+    }
+
+    if (editingRecord) {
+      SugiRecords.updateRecord(record);
+      showToast("✓ 更新しました（" + name + " 様）");
+    } else {
+      SugiRecords.addRecord(record);
+      showToast("✓ 保存しました（" + name + " 様）");
+    }
     closeModal();
-    showToast("✓ 保存しました（" + name + " 様）");
 
     // 入力リセット
-    state = {
-      stay: "overnight",
-      nights: 1,
-      facilities: [],
-      tentRental: 0,
-      tentBring: 0,
-      adults: 0,
-      children: 0,
-      infants: 0,
-      tentPeople: 0
-    };
+    state = defaultState();
+    editingRecord = null;
+    history.replaceState(null, "", location.pathname);
     document.getElementById("paymentInput").value = "";
     render();
   }
@@ -811,3 +1218,5 @@ if ("serviceWorker" in navigator) {
 </script>
 </body>
 </html>
+</content>
+</invoke>
