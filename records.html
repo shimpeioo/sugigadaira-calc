@@ -249,7 +249,7 @@ function describeRecord(r) {
     var parts = [];
     Object.keys(allFacs).forEach(function (f) { parts.push(SugiRecords.FACILITY_LABEL[f]); });
     if (totalTentB > 0) parts.push("テント持込");
-    if (totalTentR > 0) parts.push("テント貸出");
+    if (totalTentR > 0) parts.push("テント（レンタル）");
     var maxP = 0, maxInfants = 0;
     r.segments.forEach(function (seg) {
       var p = (seg.adults || 0) + (seg.children || 0);
@@ -267,7 +267,7 @@ function describeRecord(r) {
   var parts = [];
   s.facilities.forEach(function (f) { parts.push(SugiRecords.FACILITY_LABEL[f]); });
   if (s.tentBring > 0) parts.push("テント持込×" + s.tentBring);
-  if (s.tentRental > 0) parts.push("テント貸出×" + s.tentRental);
+  if (s.tentRental > 0) parts.push("テント（レンタル）×" + s.tentRental);
   var stay = s.stay === "day" ? "日帰り" : (s.nights + "泊");
   var people = (s.adults + s.children) + "人" + (s.infants > 0 ? "（幼児" + s.infants + "）" : "");
   return { facilities: parts.join(" / ") || "(施設なし)", stay: stay, people: people, isDetailed: false };

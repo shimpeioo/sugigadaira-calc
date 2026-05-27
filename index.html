@@ -228,19 +228,19 @@ header .warnings:empty{display:none}
 
     <div id="tentControls" style="margin-top:12px;border-top:1px solid #f5f5f4;padding-top:8px">
       <div class="counter">
-        <div class="label">テント貸出 <span class="sub">880円／張</span></div>
-        <div class="counter-controls">
-          <button class="cbtn" type="button" data-counter="tentRental" data-delta="-1">−</button>
-          <div class="cval"><span id="tentRentalVal">0</span><span class="unit">張</span></div>
-          <button class="cbtn" type="button" data-counter="tentRental" data-delta="1">＋</button>
-        </div>
-      </div>
-      <div class="counter">
         <div class="label">テント持込 <span class="sub">660円／張</span></div>
         <div class="counter-controls">
           <button class="cbtn" type="button" data-counter="tentBring" data-delta="-1">−</button>
           <div class="cval"><span id="tentBringVal">0</span><span class="unit">張</span></div>
           <button class="cbtn" type="button" data-counter="tentBring" data-delta="1">＋</button>
+        </div>
+      </div>
+      <div class="counter">
+        <div class="label">テント（レンタル） <span class="sub">880円／張</span></div>
+        <div class="counter-controls">
+          <button class="cbtn" type="button" data-counter="tentRental" data-delta="-1">−</button>
+          <div class="cval"><span id="tentRentalVal">0</span><span class="unit">張</span></div>
+          <button class="cbtn" type="button" data-counter="tentRental" data-delta="1">＋</button>
         </div>
       </div>
     </div>
@@ -342,19 +342,19 @@ header .warnings:empty{display:none}
     </div>
     <div style="margin-top:8px;border-top:1px solid #f5f5f4;padding-top:6px">
       <div class="counter">
-        <div class="label">テント貸出 <span class="sub">880円／張</span></div>
-        <div class="counter-controls">
-          <button class="cbtn" type="button" data-counter="tentRental" data-delta="-1">−</button>
-          <div class="cval"><span data-show="tentRental">0</span><span class="unit">張</span></div>
-          <button class="cbtn" type="button" data-counter="tentRental" data-delta="1">＋</button>
-        </div>
-      </div>
-      <div class="counter">
         <div class="label">テント持込 <span class="sub">660円／張</span></div>
         <div class="counter-controls">
           <button class="cbtn" type="button" data-counter="tentBring" data-delta="-1">−</button>
           <div class="cval"><span data-show="tentBring">0</span><span class="unit">張</span></div>
           <button class="cbtn" type="button" data-counter="tentBring" data-delta="1">＋</button>
+        </div>
+      </div>
+      <div class="counter">
+        <div class="label">テント（レンタル） <span class="sub">880円／張</span></div>
+        <div class="counter-controls">
+          <button class="cbtn" type="button" data-counter="tentRental" data-delta="-1">−</button>
+          <div class="cval"><span data-show="tentRental">0</span><span class="unit">張</span></div>
+          <button class="cbtn" type="button" data-counter="tentRental" data-delta="1">＋</button>
         </div>
       </div>
     </div>
@@ -572,8 +572,8 @@ function calculateOne(seg, stay, multiplier) {
   cottages.concat(bungalows).forEach(function (f) {
     addLine(FACILITY_LABEL[f] + "（棟代）", roundFare(PRICES[f][key] * multiplier, multiplier));
   });
-  if (seg.tentRental > 0) addLine("テント貸出 ×" + seg.tentRental + "張", roundFare(PRICES.tentRental[key] * seg.tentRental * multiplier, multiplier));
   if (seg.tentBring > 0)  addLine("テント持込 ×" + seg.tentBring + "張",  roundFare(PRICES.tentBring[key]  * seg.tentBring  * multiplier, multiplier));
+  if (seg.tentRental > 0) addLine("テント（レンタル） ×" + seg.tentRental + "張", roundFare(PRICES.tentRental[key] * seg.tentRental * multiplier, multiplier));
 
   var sheetCount = computeSheetCount(seg);
   if (sheetCount > 0) addLine("シーツ代 ×" + sheetCount + "人", roundFare(PRICES.sheet[key] * sheetCount * multiplier, multiplier));
@@ -786,8 +786,8 @@ function renderDetailed() {
 
     var sumParts = [];
     seg.facilities.forEach(function (f) { sumParts.push(FACILITY_SHORT[f]); });
-    if (seg.tentRental > 0) sumParts.push("貸テ×" + seg.tentRental);
     if (seg.tentBring > 0) sumParts.push("持テ×" + seg.tentBring);
+    if (seg.tentRental > 0) sumParts.push("レテ×" + seg.tentRental);
     var p = seg.adults + seg.children + seg.infants;
     if (p > 0) sumParts.push(p + "人");
     var mulNote = idx === 0 ? "" : "（連泊半額）";
@@ -1068,14 +1068,14 @@ render();
       var parts = [];
       state.facilities.forEach(function (f) { parts.push(FACILITY_LABEL[f]); });
       if (state.tentBring > 0) parts.push("テント持込 ×" + state.tentBring);
-      if (state.tentRental > 0) parts.push("テント貸出 ×" + state.tentRental);
+      if (state.tentRental > 0) parts.push("テント（レンタル） ×" + state.tentRental);
       return parts.join(" / ") || "(施設未選択)";
     } else {
       return "変則 " + state.segments.length + "泊：" + state.segments.map(function (seg, i) {
         var p = [];
         seg.facilities.forEach(function (f) { p.push(FACILITY_SHORT[f]); });
-        if (seg.tentRental > 0) p.push("貸テ×" + seg.tentRental);
         if (seg.tentBring > 0) p.push("持テ×" + seg.tentBring);
+        if (seg.tentRental > 0) p.push("レテ×" + seg.tentRental);
         return (i + 1) + "泊目=" + (p.join("・") || "?");
       }).join(" / ");
     }
