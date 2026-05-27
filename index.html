@@ -549,7 +549,14 @@ function computeSheetCount(seg) {
   return Math.min(sleepers - baseCap, maxCap - baseCap);
 }
 
-// 1セット分の料金（施設・テント・人数・倍率から）
+// 半額計算（multiplier < 1）の端数は10円単位で切り上げ（運用ルール、§5.5.2 参照）
+//   例：バンガロー 3,150 × 0.5 = 1,575 → 1,580
+function roundFare(amount, multiplier) {
+  if (multiplier < 1) return Math.ceil(amount / 10) * 10;
+  return Math.round(amount);
+}
+
+// 1単位の料金（multiplier は 1=フル または 0.5=連泊半額 を想定）
 function calculateOne(seg, stay, multiplier) {
   var key = stay === "overnight" ? "overnight" : "day";
   var lines = [];
@@ -563,15 +570,15 @@ function calculateOne(seg, stay, multiplier) {
   var hasTent = seg.tentRental > 0 || seg.tentBring > 0;
 
   cottages.concat(bungalows).forEach(function (f) {
-    addLine(FACILITY_LABEL[f] + "（棟代）", Math.round(PRICES[f][key] * multiplier));
+    addLine(FACILITY_LABEL[f] + "（棟代）", roundFare(PRICES[f][key] * multiplier, multiplier));
   });
-  if (seg.tentRental > 0) addLine("テント貸出 ×" + seg.tentRental + "張", Math.round(PRICES.tentRental[key] * seg.tentRental * multiplier));
-  if (seg.tentBring > 0)  addLine("テント持込 ×" + seg.tentBring + "張",  Math.round(PRICES.tentBring[key]  * seg.tentBring  * multiplier));
+  if (seg.tentRental > 0) addLine("テント貸出 ×" + seg.tentRental + "張", roundFare(PRICES.tentRental[key] * seg.tentRental * multiplier, multiplier));
+  if (seg.tentBring > 0)  addLine("テント持込 ×" + seg.tentBring + "張",  roundFare(PRICES.tentBring[key]  * seg.tentBring  * multiplier, multiplier));
 
   var sheetCount = computeSheetCount(seg);
-  if (sheetCount > 0) addLine("シーツ代 ×" + sheetCount + "人", Math.round(PRICES.sheet[key] * sheetCount * multiplier));
+  if (sheetCount > 0) addLine("シーツ代 ×" + sheetCount + "人", roundFare(PRICES.sheet[key] * sheetCount * multiplier, multiplier));
 
-  if (hasTent && seg.tentPeople > 0) addLine("人数料金（テント利用）×" + seg.tentPeople + "人", Math.round(PRICES.perPerson[key] * seg.tentPeople * multiplier));
+  if (hasTent && seg.tentPeople > 0) addLine("人数料金（テント利用）×" + seg.tentPeople + "人", roundFare(PRICES.perPerson[key] * seg.tentPeople * multiplier, multiplier));
 
   return { total: total, lines: lines };
 }
@@ -580,8 +587,21 @@ function calculate(st) {
   var isOvernight = st.stay === "overnight";
   if (st.mode === "simple") {
     var nights = isOvernight ? Math.max(1, st.nights) : 1;
-    var mul = isOvernight ? (1 + (nights - 1) * 0.5) : 1;
-    return calculateOne(st, st.stay, mul);
+    // 1泊または日帰り：multiplier=1 で1回
+    if (!isOvernight || nights === 1) {
+      return calculateOne(st, st.stay, 1);
+    }
+    // 連泊：1泊目フル + (n-1) × 半額 を各料金項目ごとに合算（各単位で繰り上げが効く）
+    var firstNight = calculateOne(st, st.stay, 1);
+    var extraNight = calculateOne(st, st.stay, 0.5);
+    var combinedLines = firstNight.lines.map(function (l, i) {
+      var ext = extraNight.lines[i] || { amount: 0 };
+      return { label: l.label, amount: l.amount + ext.amount * (nights - 1) };
+    });
+    return {
+      total: firstNight.total + extraNight.total * (nights - 1),
+      lines: combinedLines
+    };
   } else {
     var lines = [];
     var total = 0;

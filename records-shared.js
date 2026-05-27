@@ -43,10 +43,18 @@ var FACILITY_LABEL = {
 };
 
 /* ---------- 計算 ----------
- * calculateOne(seg, stay, multiplier): 1セット分の料金（変則モードの1セグメント、通常モードの1記録両用）
- * calculate(s): 通常モードの記録（state単位）の合計
+ * calculateOne(seg, stay, multiplier): 1単位の料金。multiplier は 1（フル）または 0.5（連泊半額）
+ *   - 半額計算（multiplier < 1）の端数は 10円単位で切り上げ（運用上のルール）
+ *     例：バンガロー 3,150 × 0.5 = 1,575 → 1,580
+ * calculate(s): 通常モードの記録（state単位）の合計。連泊は「1泊目フル + (n-1)×半額」を合算
  * calculateRecord(record): 通常/変則を判定して記録全体の合計
  */
+function roundFare(amount, multiplier) {
+  // 半額計算（端数が出る可能性）なら 10円単位で切り上げ。フル料金は元のまま（10円単位）
+  if (multiplier < 1) return Math.ceil(amount / 10) * 10;
+  return Math.round(amount);
+}
+
 function calculateOne(seg, stay, multiplier) {
   var key = stay === "overnight" ? "overnight" : "day";
   var total = 0;
@@ -55,22 +63,30 @@ function calculateOne(seg, stay, multiplier) {
   var hasTent = seg.tentRental > 0 || seg.tentBring > 0;
 
   cottages.concat(bungalows).forEach(function (f) {
-    total += Math.round(PRICES[f][key] * multiplier);
+    total += roundFare(PRICES[f][key] * multiplier, multiplier);
   });
-  if (seg.tentRental > 0) total += Math.round(PRICES.tentRental[key] * seg.tentRental * multiplier);
-  if (seg.tentBring > 0)  total += Math.round(PRICES.tentBring[key]  * seg.tentBring  * multiplier);
+  if (seg.tentRental > 0) total += roundFare(PRICES.tentRental[key] * seg.tentRental * multiplier, multiplier);
+  if (seg.tentBring > 0)  total += roundFare(PRICES.tentBring[key]  * seg.tentBring  * multiplier, multiplier);
 
   var sheetCount = computeSheetCount(seg);
-  if (sheetCount > 0) total += Math.round(PRICES.sheet[key] * sheetCount * multiplier);
-  if (hasTent && seg.tentPeople > 0) total += Math.round(PRICES.perPerson[key] * seg.tentPeople * multiplier);
+  if (sheetCount > 0) total += roundFare(PRICES.sheet[key] * sheetCount * multiplier, multiplier);
+  if (hasTent && seg.tentPeople > 0) total += roundFare(PRICES.perPerson[key] * seg.tentPeople * multiplier, multiplier);
   return total;
 }
 
 function calculate(s) {
   var isOvernight = s.stay === "overnight";
   var nights = isOvernight ? Math.max(1, s.nights) : 1;
-  var nightsMul = isOvernight ? (1 + (nights - 1) * 0.5) : 1;
-  var total = calculateOne(s, s.stay, nightsMul);
+  // 1泊または日帰り：multiplier=1 で1回計算
+  // 連泊：1泊目フル + (n-1) × 半額 を合算（各単位で繰り上げが効くため）
+  var total;
+  if (!isOvernight || nights === 1) {
+    total = calculateOne(s, s.stay, 1);
+  } else {
+    var firstNight = calculateOne(s, s.stay, 1);
+    var extraNight = calculateOne(s, s.stay, 0.5);
+    total = firstNight + extraNight * (nights - 1);
+  }
   return { total: total, sheetCount: computeSheetCount(s) };
 }
 
