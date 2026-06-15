@@ -583,6 +583,35 @@ function calculateOne(seg, stay, multiplier) {
   return { total: total, lines: lines };
 }
 
+// 変則：連泊半額は「前夜と同じ施設（棟）」だけ。施設ごとに全額/半額を振り分けた明細つき計算。
+// classifySegment は records-shared.js（先に読み込み）の共有ロジックを使う。
+function calculateOneContinuity(seg, prevSeg, stay) {
+  if (stay !== "overnight") return calculateOne(seg, stay, 1); // 日帰りは半額なし
+  var key = "overnight";
+  var c = classifySegment(seg, prevSeg);
+  var lines = [];
+  var total = 0;
+  function addLine(label, amount) { if (amount > 0) { lines.push({ label: label, amount: amount }); total += amount; } }
+
+  c.cottagesFull.forEach(function (f) { addLine(FACILITY_LABEL[f] + "（棟代）", roundFare(PRICES[f][key], 1)); });
+  c.bungalowsFull.forEach(function (f) { addLine(FACILITY_LABEL[f] + "（棟代）", roundFare(PRICES[f][key], 1)); });
+  c.cottagesHalf.forEach(function (f) { addLine(FACILITY_LABEL[f] + "（棟代・連泊）", roundFare(PRICES[f][key] * 0.5, 0.5)); });
+  c.bungalowsHalf.forEach(function (f) { addLine(FACILITY_LABEL[f] + "（棟代・連泊）", roundFare(PRICES[f][key] * 0.5, 0.5)); });
+
+  if (c.tentBringFull > 0)  addLine("テント持込 ×" + c.tentBringFull + "張",  roundFare(PRICES.tentBring[key] * c.tentBringFull, 1));
+  if (c.tentBringHalf > 0)  addLine("テント持込 ×" + c.tentBringHalf + "張（連泊）",  roundFare(PRICES.tentBring[key] * c.tentBringHalf * 0.5, 0.5));
+  if (c.tentRentalFull > 0) addLine("テント（レンタル） ×" + c.tentRentalFull + "張", roundFare(PRICES.tentRental[key] * c.tentRentalFull, 1));
+  if (c.tentRentalHalf > 0) addLine("テント（レンタル） ×" + c.tentRentalHalf + "張（連泊）", roundFare(PRICES.tentRental[key] * c.tentRentalHalf * 0.5, 0.5));
+
+  if (c.sheetFull > 0) addLine("シーツ代 ×" + c.sheetFull + "人", roundFare(PRICES.sheet[key] * c.sheetFull, 1));
+  if (c.sheetHalf > 0) addLine("シーツ代 ×" + c.sheetHalf + "人（連泊）", roundFare(PRICES.sheet[key] * c.sheetHalf * 0.5, 0.5));
+
+  if (c.tentPeopleFull > 0) addLine("人数料金（テント利用）×" + c.tentPeopleFull + "人", roundFare(PRICES.perPerson[key] * c.tentPeopleFull, 1));
+  if (c.tentPeopleHalf > 0) addLine("人数料金（テント利用）×" + c.tentPeopleHalf + "人（連泊）", roundFare(PRICES.perPerson[key] * c.tentPeopleHalf * 0.5, 0.5));
+
+  return { total: total, lines: lines };
+}
+
 function calculate(st) {
   var isOvernight = st.stay === "overnight";
   if (st.mode === "simple") {
@@ -606,9 +635,9 @@ function calculate(st) {
     var lines = [];
     var total = 0;
     st.segments.forEach(function (seg, i) {
-      var mul = isOvernight ? (i === 0 ? 1 : 0.5) : 1;
-      var r = calculateOne(seg, st.stay, mul);
-      seg._calc = { total: r.total, lines: r.lines, mul: mul };
+      // 連泊半額は前夜と同じ施設だけ（棟が変われば全額）。施設ごとに振り分けて計算。
+      var r = calculateOneContinuity(seg, i > 0 ? st.segments[i - 1] : null, st.stay);
+      seg._calc = { total: r.total, lines: r.lines };
       r.lines.forEach(function (l) {
         lines.push({ label: (i + 1) + "泊目 " + l.label, amount: l.amount });
       });

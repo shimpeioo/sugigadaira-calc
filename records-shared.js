@@ -96,8 +96,12 @@ function calculateRecord(record) {
     var isOvernight = stay === "overnight";
     var total = 0;
     record.segments.forEach(function (seg, i) {
-      var mul = isOvernight ? (i === 0 ? 1 : 0.5) : 1;
-      total += calculateOne(seg, stay, mul);
+      if (isOvernight) {
+        // 前夜と同じ施設だけ半額（施設ごとに振り分け）
+        total += classifiedTotal(classifySegment(seg, i > 0 ? record.segments[i - 1] : null), stay);
+      } else {
+        total += calculateOne(seg, stay, 1); // 日帰りは半額なし
+      }
     });
     return total;
   }
@@ -130,6 +134,66 @@ function computeSheetCount(s) {
   if (cottageSleepers <= baseCap) return 0;
   var addable = maxCap - baseCap;
   return Math.min(cottageSleepers - baseCap, addable);
+}
+
+/* ---------- 変則の連泊半額（施設ごとの判定）----------
+ * ルール（2026 改定）：連泊半額は「前夜と同じ施設（棟）に続けて泊まった時だけ」。
+ *   棟が変われば（B棟→C棟のように同じ料金でも）その施設はまた全額。間が空いても全額に戻る。
+ *   ＝施設ごとに、前のセグメント（前夜）に在った施設は半額・無かった施設は全額に振り分ける。
+ *   ※テント張数・テント利用人数・シーツは数量だが、運用上は「同じ施設の連泊か否か」で全量判定。
+ * classifySegment(seg, prevSeg): この泊の各項目を full（全額・宿泊扱い）と half（半額・連泊扱い）に分ける。
+ *   prevSeg が無い（初日）なら全て full。通常モード・日帰りには使わない（overnight の変則専用）。
+ */
+function classifySegment(seg, prevSeg) {
+  var prevFac = (prevSeg && prevSeg.facilities) || [];
+  function inPrev(f) { return prevFac.indexOf(f) !== -1; }
+  var prevRental = (prevSeg && prevSeg.tentRental) || 0;
+  var prevBring = (prevSeg && prevSeg.tentBring) || 0;
+  var prevHadTent = prevRental > 0 || prevBring > 0;
+
+  var cottagesFull = [], cottagesHalf = [], bungalowsFull = [], bungalowsHalf = [];
+  (seg.facilities || []).forEach(function (f) {
+    if (f.indexOf("cottage") === 0) { (inPrev(f) ? cottagesHalf : cottagesFull).push(f); }
+    else if (f.indexOf("bungalow") === 0) { (inPrev(f) ? bungalowsHalf : bungalowsFull).push(f); }
+  });
+
+  var rental = seg.tentRental || 0, bring = seg.tentBring || 0;
+  var rentalHalf = rental > 0 && prevRental > 0;
+  var bringHalf = bring > 0 && prevBring > 0;
+
+  var curCottages = (seg.facilities || []).filter(function (f) { return f.indexOf("cottage") === 0; });
+  var sheet = computeSheetCount(seg);
+  var sheetHalf = sheet > 0 && curCottages.length > 0 && curCottages.every(inPrev);
+
+  var people = seg.tentPeople || 0;
+  var curHasTent = rental > 0 || bring > 0;
+  var peopleHalf = people > 0 && curHasTent && prevHadTent;
+
+  return {
+    cottagesFull: cottagesFull, cottagesHalf: cottagesHalf,
+    bungalowsFull: bungalowsFull, bungalowsHalf: bungalowsHalf,
+    tentRentalFull: rentalHalf ? 0 : rental, tentRentalHalf: rentalHalf ? rental : 0,
+    tentBringFull: bringHalf ? 0 : bring, tentBringHalf: bringHalf ? bring : 0,
+    sheetFull: sheetHalf ? 0 : sheet, sheetHalf: sheetHalf ? sheet : 0,
+    tentPeopleFull: peopleHalf ? 0 : people, tentPeopleHalf: peopleHalf ? people : 0
+  };
+}
+
+// classifySegment の内訳から金額を出す（overnight 前提・full=全額/half=半額・端数は roundFare）
+function classifiedTotal(c, stay) {
+  var key = stay === "overnight" ? "overnight" : "day";
+  var t = 0;
+  c.cottagesFull.concat(c.bungalowsFull).forEach(function (f) { t += roundFare(PRICES[f][key], 1); });
+  c.cottagesHalf.concat(c.bungalowsHalf).forEach(function (f) { t += roundFare(PRICES[f][key] * 0.5, 0.5); });
+  if (c.tentRentalFull > 0) t += roundFare(PRICES.tentRental[key] * c.tentRentalFull, 1);
+  if (c.tentRentalHalf > 0) t += roundFare(PRICES.tentRental[key] * c.tentRentalHalf * 0.5, 0.5);
+  if (c.tentBringFull > 0) t += roundFare(PRICES.tentBring[key] * c.tentBringFull, 1);
+  if (c.tentBringHalf > 0) t += roundFare(PRICES.tentBring[key] * c.tentBringHalf * 0.5, 0.5);
+  if (c.sheetFull > 0) t += roundFare(PRICES.sheet[key] * c.sheetFull, 1);
+  if (c.sheetHalf > 0) t += roundFare(PRICES.sheet[key] * c.sheetHalf * 0.5, 0.5);
+  if (c.tentPeopleFull > 0) t += roundFare(PRICES.perPerson[key] * c.tentPeopleFull, 1);
+  if (c.tentPeopleHalf > 0) t += roundFare(PRICES.perPerson[key] * c.tentPeopleHalf * 0.5, 0.5);
+  return t;
 }
 
 /* ---------- 保存・読込 ---------- */
@@ -282,55 +346,43 @@ function segmentToMatrixRow(seg, record, segIndex) {
   var stay = (record.state && record.state.stay) || "overnight";
   var isOvernight = stay === "overnight";
   var isFirst = segIndex === 0;
-  // 変則は基本 overnight 想定。day の場合は各日を「日帰り」として扱う
-  var firstNight = (isOvernight && isFirst) ? 1 : 0;
-  var extraNights = (isOvernight && !isFirst) ? 1 : 0;
-  var dayCount = isOvernight ? 0 : 1;
+  var prevSeg = segIndex > 0 ? record.segments[segIndex - 1] : null;
 
   var useDate = addDays(record.useDate, segIndex);
 
   var cells = {};
   function add(col, v) { if (!v) return; cells[col] = (cells[col] || 0) + v; }
+  function baseOf(f) {
+    if (f === "cottageA") return 1;
+    if (f === "cottageB" || f === "cottageC" || f === "cottageD" || f === "cottageE") return 5;
+    if (f === "bungalow1" || f === "bungalow2") return 13;
+    return null;
+  }
 
-  seg.facilities.forEach(function (f) {
-    var base;
-    if (f === "cottageA") base = 1;
-    else if (f === "cottageB" || f === "cottageC" || f === "cottageD" || f === "cottageE") base = 5;
-    else if (f === "bungalow1" || f === "bungalow2") base = 13;
-    else return;
-    add(base + 0, firstNight);
-    add(base + 1, extraNights);
-    add(base + 3, dayCount);
-  });
-
-  var sheetCount = computeSheetCount(seg);
-  if (sheetCount > 0) {
-    add(9,  sheetCount * firstNight);
-    add(10, sheetCount * extraNights);
-    add(12, sheetCount * dayCount);
-  }
-  if (seg.tentRental > 0) {
-    add(17, seg.tentRental * firstNight);
-    add(18, seg.tentRental * extraNights);
-    add(19, seg.tentRental * dayCount);
-  }
-  if (seg.tentBring > 0) {
-    add(20, seg.tentBring * firstNight);
-    add(21, seg.tentBring * extraNights);
-    add(22, seg.tentBring * dayCount);
-  }
-  if (seg.tentPeople > 0) {
-    add(23, seg.tentPeople * firstNight);
-    add(24, seg.tentPeople * extraNights);
-    add(25, seg.tentPeople * dayCount);
+  // 連泊半額は「前夜と同じ施設」だけ。施設ごとに 宿泊(全額)列／連泊(半額)列 へ振り分ける。
+  var c = isOvernight ? classifySegment(seg, prevSeg) : null;
+  if (!isOvernight) {
+    // 日帰り：各施設・各項目を日帰り列へ（連泊の概念なし）
+    seg.facilities.forEach(function (f) { var b = baseOf(f); if (b != null) add(b + 3, 1); });
+    var scDay = computeSheetCount(seg);
+    if (scDay > 0) add(12, scDay);
+    if (seg.tentRental > 0) add(19, seg.tentRental);
+    if (seg.tentBring > 0) add(22, seg.tentBring);
+    if (seg.tentPeople > 0) add(25, seg.tentPeople);
+  } else {
+    c.cottagesFull.concat(c.bungalowsFull).forEach(function (f) { var b = baseOf(f); if (b != null) add(b + 0, 1); });
+    c.cottagesHalf.concat(c.bungalowsHalf).forEach(function (f) { var b = baseOf(f); if (b != null) add(b + 1, 1); });
+    add(9, c.sheetFull); add(10, c.sheetHalf);
+    add(17, c.tentRentalFull); add(18, c.tentRentalHalf);
+    add(20, c.tentBringFull); add(21, c.tentBringHalf);
+    add(23, c.tentPeopleFull); add(24, c.tentPeopleHalf);
   }
 
   var totalPeople = (seg.adults || 0) + (seg.children || 0) + (seg.infants || 0);
   var peopleInside = record.region === "inside" ? totalPeople : 0;
   var peopleOutside = record.region === "outside" ? totalPeople : 0;
 
-  var mul = isOvernight ? (isFirst ? 1 : 0.5) : 1;
-  var segSubtotal = calculateOne(seg, stay, mul);
+  var segSubtotal = isOvernight ? classifiedTotal(c, stay) : calculateOne(seg, stay, 1);
 
   // 名前列：先頭行はそのまま、2行目以降は「（連泊）」を付ける（紙でグループ識別しやすく）
   var nameOut = record.nameKana || "";
@@ -567,6 +619,26 @@ function aggregateForStatusSheet(records) {
     }
   }
 
+  // 変則・宿泊：前夜と同じ施設は連泊(extraNights)、新しい施設は宿泊(use) に数える
+  function aggregateClassified(c) {
+    function keyOver(f) {
+      if (f === "cottageA") return "cottage6_over";
+      if (f === "cottageB" || f === "cottageC" || f === "cottageD" || f === "cottageE") return "cottage4_over";
+      if (f === "bungalow1" || f === "bungalow2") return "bungalow_over";
+      return null;
+    }
+    c.cottagesFull.concat(c.bungalowsFull).forEach(function (f) { var k = keyOver(f); if (k) bump(k, "use", 1); });
+    c.cottagesHalf.concat(c.bungalowsHalf).forEach(function (f) { var k = keyOver(f); if (k) bump(k, "extraNights", 1); });
+    bump("addon_over", "use", c.sheetFull);
+    bump("addon_over", "extraNights", c.sheetHalf);
+    bump("tentR_over", "use", c.tentRentalFull);
+    bump("tentR_over", "extraNights", c.tentRentalHalf);
+    bump("tentB_over", "use", c.tentBringFull);
+    bump("tentB_over", "extraNights", c.tentBringHalf);
+    bump("ppl_over", "use", c.tentPeopleFull);
+    bump("ppl_over", "extraNights", c.tentPeopleHalf);
+  }
+
   records.forEach(function (r) {
     totalDiscount += (r.discount || 0);
 
@@ -574,10 +646,11 @@ function aggregateForStatusSheet(records) {
       var stay = (r.state && r.state.stay) || "overnight";
       var isOver = stay === "overnight";
       r.segments.forEach(function (seg, i) {
-        var firstNight = (isOver && i === 0) ? 1 : 0;
-        var extra = (isOver && i > 0) ? 1 : 0;
-        var day = isOver ? 0 : 1;
-        aggregateOne(seg, firstNight, extra, day);
+        if (isOver) {
+          aggregateClassified(classifySegment(seg, i > 0 ? r.segments[i - 1] : null));
+        } else {
+          aggregateOne(seg, 0, 0, 1); // 日帰り
+        }
       });
     } else {
       var s = r.state || {};
